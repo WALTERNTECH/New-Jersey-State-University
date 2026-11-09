@@ -1,0 +1,9 @@
+node_modules
+.next
+.local
+.vercel
+.env*
+*.log
+next-env.d.ts
+logo-src.jpg
+*.tsbuildinfo
