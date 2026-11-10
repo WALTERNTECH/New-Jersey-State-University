@@ -20,6 +20,32 @@ const stages = [
 ];
 const order = ["draft", "submitted", "under_review", "interview", "decision"];
 
+const headline: Record<string, string> = {
+  submitted: "Application received",
+  under_review: "Your application is under review",
+  interview: "You have been shortlisted for interview",
+  awarded: `Congratulations — you have been awarded the ${programme.name}`,
+  waitlisted: "You are on the waitlist",
+  not_selected: "Our decision on your application",
+};
+
+function message(status: string, email: string) {
+  switch (status) {
+    case "under_review":
+      return "The committee is reading your application, verifying your documents and contacting your recommender. There is nothing you need to do.";
+    case "interview":
+      return `Well done. We will contact you at ${email} to agree a time for a 30-minute video conversation with the committee.`;
+    case "awarded":
+      return `The committee has awarded you a fully funded place starting ${programme.startTerm}. We will email ${email} with your award letter and the next steps for enrolment and travel. You will never be asked to pay to accept this award.`;
+    case "waitlisted":
+      return "The committee was impressed by your application. Every place has been offered for now, and you are on the waitlist. If a place becomes available, we will contact you straight away.";
+    case "not_selected":
+      return "Thank you for applying. We received many strong applications and were not able to offer you a scholarship this year. We encourage you to apply again in a future cycle.";
+    default:
+      return `Thank you. Your application is with the scholarship committee. We will update this page at each stage, and email ${email} when there is news.`;
+  }
+}
+
 export default async function Portal() {
   const me = await currentApplicant();
   if (!me) redirect("/signin");
@@ -84,10 +110,10 @@ export default async function Portal() {
               </section>
             ) : (
               <>
-                <section className="panel" aria-labelledby="subh">
+                <section className={`panel${app.status === "awarded" ? " awarded" : ""}`} aria-labelledby="subh">
                   <div className="panel-h">
                     <div>
-                      <h2 id="subh">Application received</h2>
+                      <h2 id="subh">{headline[app.status] ?? "Application received"}</h2>
                       <p className="small muted mt8">Submitted {fmtDate(app.submitted_at, true)}</p>
                     </div>
                     <Link className="btn btn-ghost btn-sm" href="/portal/submitted">
@@ -95,10 +121,7 @@ export default async function Portal() {
                     </Link>
                   </div>
                   <div className="panel-b">
-                    <p>
-                      Thank you. Your application is with the scholarship committee. We will update this page at each stage, and email {me.email} when there is
-                      news.
-                    </p>
+                    <p>{message(app.status, me.email)}</p>
                   </div>
                 </section>
                 <section className="panel" aria-labelledby="doch">

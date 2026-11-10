@@ -30,6 +30,7 @@ const config: NextConfig = {
         ],
       },
       { source: "/portal/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex" }] },
+      { source: "/committee/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }, { key: "Cache-Control", value: "private, no-store" }] },
     ];
   },
 };

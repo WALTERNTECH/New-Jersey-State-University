@@ -126,6 +126,67 @@ alter table sessions enable row level security;
 alter table applications enable row level security;
 alter table documents enable row level security;
 alter table status_events enable row level security;
+
+-- Scholarship committee
+create table if not exists staff (
+  id uuid primary key default gen_random_uuid(),
+  email text not null unique,
+  name text not null,
+  role text not null check (role in ('owner', 'chair', 'reviewer')),
+  password_hash text not null,
+  must_change boolean not null default false,
+  totp_secret bytea,
+  totp_pending bytea,
+  totp_last_step bigint not null default 0,
+  failed_logins int not null default 0,
+  locked_until timestamptz,
+  disabled boolean not null default false,
+  last_seen timestamptz,
+  created_at timestamptz not null default now()
+);
+create table if not exists staff_sessions (
+  token_hash text primary key,
+  staff_id uuid not null references staff(id) on delete cascade,
+  mfa_ok boolean not null default false,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists staff_sessions_staff on staff_sessions(staff_id);
+create table if not exists notes (
+  id bigserial primary key,
+  application_id uuid not null references applications(id) on delete cascade,
+  staff_id uuid not null references staff(id),
+  body text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists notes_application on notes(application_id);
+create table if not exists scores (
+  application_id uuid not null references applications(id) on delete cascade,
+  staff_id uuid not null references staff(id),
+  academic int not null check (academic between 1 and 5),
+  need int not null check (need between 1 and 5),
+  essays int not null check (essays between 1 and 5),
+  recommendation int not null check (recommendation between 1 and 5),
+  comment text,
+  updated_at timestamptz not null default now(),
+  primary key (application_id, staff_id)
+);
+create table if not exists audit (
+  id bigserial primary key,
+  staff_id uuid references staff(id),
+  action text not null,
+  target text,
+  detail text,
+  created_at timestamptz not null default now()
+);
+create index if not exists audit_created on audit(created_at desc);
+alter table status_events add column if not exists staff_id uuid references staff(id);
+create index if not exists applications_status on applications(status);
+alter table staff enable row level security;
+alter table staff_sessions enable row level security;
+alter table notes enable row level security;
+alter table scores enable row level security;
+alter table audit enable row level security;
 `;
 
 const g = globalThis as unknown as { __njsuDb?: Promise<Db> };
