@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
+import "./premium.css";
 import { programme } from "@/lib/content";
 
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -11,17 +12,19 @@ const site = process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.VERCEL_PROJECT_PRO
 export const metadata: Metadata = {
   metadataBase: new URL(site),
   title: { default: `${programme.name} | ${programme.university}`, template: `%s | ${programme.university}` },
-  description: `A fully funded four-year undergraduate scholarship at ${programme.university} for students whose families cannot meet the cost of university. Free to apply.`,
+  description: `The ${programme.name} meets the full cost of attendance for four years of undergraduate study at ${programme.university} for students of exceptional promise and demonstrated financial need.`,
   icons: { icon: "/icon.png", apple: "/apple-icon.png" },
-  openGraph: { title: programme.name, description: "Four years of fully funded study. Free to apply.", images: ["/logo-full.png"] },
+  openGraph: { title: programme.name, description: "Four years of undergraduate study, with the full cost of attendance met.", images: ["/logo-full.png"] },
 };
 
 export const viewport: Viewport = { themeColor: "#06243c", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+    <html lang="en" className={`${sans.variable} ${serif.variable}`} suppressHydrationWarning>
       <body>
+        {/* Lets CSS hide scroll-reveal content only when JavaScript is running to reveal it. */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
         <a className="skip" href="#main">
           Skip to content
         </a>

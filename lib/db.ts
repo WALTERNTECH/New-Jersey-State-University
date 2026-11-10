@@ -181,6 +181,44 @@ create table if not exists audit (
 );
 create index if not exists audit_created on audit(created_at desc);
 alter table status_events add column if not exists staff_id uuid references staff(id);
+
+-- Temporary passwords issued by the Office must be replaced at the next sign-in
+alter table applicants add column if not exists must_change boolean not null default false;
+
+-- Admission: offer reply and reporting to campus
+alter table applications add column if not exists offer_reply_at timestamptz;
+alter table applications add column if not exists arrival jsonb;
+alter table applications add column if not exists enrolled_at timestamptz;
+
+-- Allowance requests, opened only to admitted scholars
+create table if not exists allowance_requests (
+  id uuid primary key default gen_random_uuid(),
+  application_id uuid not null references applications(id) on delete cascade,
+  slug text not null,
+  data jsonb not null default '{}'::jsonb,
+  status text not null default 'draft' check (status in ('draft', 'submitted', 'approved', 'declined', 'disbursed')),
+  decision_note text,
+  decided_by uuid references staff(id),
+  decided_at timestamptz,
+  submitted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists allowance_requests_application on allowance_requests(application_id);
+create index if not exists allowance_requests_status on allowance_requests(status);
+create table if not exists allowance_files (
+  id uuid primary key default gen_random_uuid(),
+  request_id uuid not null references allowance_requests(id) on delete cascade,
+  doc_key text not null,
+  filename text not null,
+  mime text not null,
+  size int not null,
+  content bytea not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists allowance_files_request on allowance_files(request_id);
+alter table allowance_requests enable row level security;
+alter table allowance_files enable row level security;
 create index if not exists applications_status on applications(status);
 alter table staff enable row level security;
 alter table staff_sessions enable row level security;

@@ -41,7 +41,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
   const args: unknown[] = [];
   const arg = (v: unknown) => (args.push(v), `$${args.length}`);
   if (status === "all") where.push("a.status <> 'draft'");
-  else if (status === "decided") where.push("a.status in ('awarded', 'waitlisted', 'not_selected')");
+  else if (status === "decided") where.push("a.status in ('awarded', 'waitlisted', 'not_selected', 'accepted', 'declined_offer', 'enrolled')");
   else if (status === "mine") where.push(`a.status in ('under_review', 'interview') and not exists (select 1 from scores s where s.application_id = a.id and s.staff_id = ${arg(me.id)})`);
   else where.push(`a.status = ${arg(status)}`);
   if (sp.q?.trim()) {
@@ -73,8 +73,8 @@ export default async function Applications({ searchParams }: { searchParams: Pro
   ]);
   const total = rows[0]?.total ?? 0;
   const countFor = (id: string) =>
-    id === "decided" ? counts.awarded + counts.waitlisted + counts.not_selected :
-    id === "all" ? counts.submitted + counts.under_review + counts.interview + counts.awarded + counts.waitlisted + counts.not_selected :
+    id === "decided" ? counts.awarded + counts.waitlisted + counts.not_selected + counts.accepted + counts.declined_offer + counts.enrolled :
+    id === "all" ? counts.submitted + counts.under_review + counts.interview + counts.awarded + counts.waitlisted + counts.not_selected + counts.accepted + counts.declined_offer + counts.enrolled :
     id === "mine" ? counts.my_queue :
     (counts as unknown as Record<string, number>)[id];
 

@@ -39,7 +39,7 @@ export const steps: Step[] = [
     id: "personal",
     title: "About you",
     short: "About you",
-    intro: "Your name as it appears on your identity document, so we can match your records.",
+    intro: "Please enter your name exactly as it appears on your passport or national identity document.",
     fields: [
       { name: "first_name", label: "First name", type: "text", required: true, autoComplete: "given-name", half: true, maxLength: 80 },
       { name: "last_name", label: "Last name", type: "text", required: true, autoComplete: "family-name", half: true, maxLength: 80 },
@@ -55,7 +55,7 @@ export const steps: Step[] = [
     id: "contact",
     title: "Contact details",
     short: "Contact",
-    intro: "We use these to reach you about interviews and your decision.",
+    intro: "The Office of Admissions will use these details to contact you regarding interviews and your admission decision.",
     fields: [
       { name: "phone", label: "Mobile number", type: "tel", required: true, autoComplete: "tel", hint: "Include your country code, for example +254 712 345 678.", half: true, maxLength: 24 },
       { name: "whatsapp", label: "Can we reach you on WhatsApp at this number?", type: "yesno", half: true },
@@ -67,9 +67,9 @@ export const steps: Step[] = [
   },
   {
     id: "academics",
-    title: "Education",
+    title: "Academic background",
     short: "Education",
-    intro: "Tell us where you studied and what you would like to study at NJSU.",
+    intro: "Provide details of your secondary education and your intended course of study at New Jersey State University.",
     fields: [
       {
         name: "education_level",
@@ -112,7 +112,7 @@ export const steps: Step[] = [
     id: "household",
     title: "Household and finances",
     short: "Household",
-    intro: "This helps us understand your need. Estimates are fine; we never ask for bank statements or payments.",
+    intro: "This information allows the Committee to assess financial need. Reasonable estimates are acceptable.",
     fields: [
       { name: "household_size", label: "People in your household", type: "number", required: true, min: 1, max: 30, half: true, hint: "Including you." },
       { name: "earners", label: "How many of them earn an income", type: "number", required: true, min: 0, max: 30, half: true },
@@ -129,10 +129,29 @@ export const steps: Step[] = [
     ],
   },
   {
+    id: "support",
+    title: "Scholarship support",
+    short: "Support",
+    intro: "Certain allowances are arranged from the outset. Your answers here allow the Office of Financial Aid to prepare your award should you be admitted.",
+    fields: [
+      {
+        name: "housing",
+        label: "Housing preference",
+        type: "select",
+        required: true,
+        options: ["University residence hall with dining plan", "Off-campus housing (Off-Campus Housing and Board Allowance)"],
+        hint: "First-year scholars are strongly encouraged to live in residence. Off-campus arrangements are confirmed after admission.",
+      },
+      { name: "laptop", label: "Do you require the Laptop and Technology Allowance?", type: "yesno", required: true, hint: "Scholars who already own a suitable computer may decline it." },
+      { name: "visa_needed", label: "Will you require a U.S. student (F-1) visa?", type: "yesno", required: true },
+      { name: "accessibility", label: "Accessibility, medical or dietary needs we should plan for", type: "textarea", maxWords: 150, hint: "Optional. Shared only with the offices that arrange your support." },
+    ],
+  },
+  {
     id: "essays",
-    title: "Your story",
-    short: "Your story",
-    intro: "Two short pieces in your own words. There are no right answers; we want to hear your voice.",
+    title: "Personal statements",
+    short: "Statements",
+    intro: "Two short statements in your own words. The Committee is interested in your perspective and aspirations rather than in polished prose.",
     fields: [
       { name: "essay_goals", label: "What do you hope to study, and what will you do with your degree?", type: "textarea", required: true, minWords: 100, maxWords: 400 },
       { name: "essay_challenge", label: "Tell us about a challenge you have faced and what it taught you.", type: "textarea", required: true, minWords: 100, maxWords: 400 },
@@ -140,9 +159,9 @@ export const steps: Step[] = [
   },
   {
     id: "recommender",
-    title: "Recommendation",
+    title: "Recommender",
     short: "Recommender",
-    intro: "Someone who knows you well: a teacher, principal, employer or community leader. We contact them after you submit, so you do not need to collect a letter.",
+    intro: "Nominate one person who knows you well, such as a teacher, principal, employer or community leader. The Office of Admissions will request the recommendation directly once you submit; you need not obtain a letter yourself.",
     fields: [
       { name: "rec_name", label: "Their full name", type: "text", required: true, half: true, maxLength: 120 },
       { name: "rec_email", label: "Their email", type: "email", required: true, half: true, maxLength: 160 },
@@ -221,7 +240,13 @@ export const statusLabels: Record<string, string> = {
   submitted: "Submitted",
   under_review: "Under review",
   interview: "Interview",
-  awarded: "Scholarship awarded",
+  awarded: "Admitted with scholarship",
   waitlisted: "Waitlisted",
-  not_selected: "Not selected",
+  not_selected: "Not admitted",
+  accepted: "Offer accepted",
+  declined_offer: "Offer declined",
+  enrolled: "Enrolled",
 };
+
+/** Admitted scholars who have accepted their offer, and those who have reported to campus. */
+export const ADMITTED = ["accepted", "enrolled"];

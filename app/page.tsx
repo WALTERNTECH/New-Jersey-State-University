@@ -1,75 +1,106 @@
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/Chrome";
-import { coverage, eligibility, faqs, programme, timeline } from "@/lib/content";
+import { BackgroundVideo, CountUp, RevealObserver } from "@/components/Motion";
+import { allowanceCategories, allowances, eligibility, faqs, pillars, programme, timeline } from "@/lib/content";
+
+// Annual value of the allowances paid every year, for the figure in the "Beyond tuition" section.
+const annual = [1500, 4500, 5500, 3500];
 
 export default function Home() {
   return (
     <>
       <SiteHeader />
       <main id="main">
-        <section className="hero">
-          <div className="wrap">
-            <div>
-              <span className="eyebrow">{programme.name} · {programme.cycle}</span>
-              <h1>
-                Four years of university, <em>fully funded.</em>
+        <section className="hero2" aria-labelledby="hero-title">
+          <div className="hero2-bg" aria-hidden>
+            <span className="rays" />
+            <span className="glow" />
+          </div>
+          <BackgroundVideo className="hero2-mobile-video" src="/media/hero-2.mp4" poster="/media/hero-2.jpg" />
+          <div className="wrap hero2-grid">
+            <div className="hero2-copy">
+              <span className="eyebrow light anim" style={{ animationDelay: "0.05s" }}>
+                {programme.office}
+              </span>
+              <h1 id="hero-title" className="anim" style={{ animationDelay: "0.15s" }}>
+                A complete education,
+                <br />
+                <em>fully funded.</em>
               </h1>
-              <p className="lede">
-                The {programme.name} covers tuition, housing, meals, books and a laptop for the whole of a bachelor’s degree at {programme.university}, for
-                talented students whose families cannot afford university.
+              <p className="anim" style={{ animationDelay: "0.3s" }}>
+                The {programme.name} meets the full cost of attendance for four years of undergraduate study, for students of exceptional promise whose
+                families are unable to meet the cost of a university education.
               </p>
-              <div className="actions">
-                <Link href="/apply" className="btn btn-primary">
-                  Check eligibility and apply
+              <div className="actions anim" style={{ animationDelay: "0.45s" }}>
+                <Link href="/apply" className="btn btn-gold">
+                  Begin your application
                 </Link>
-                <Link href="#how" className="btn btn-ghost">
-                  How applying works
+                <Link href="/financial-aid" className="btn btn-ghost-light">
+                  Explore financial aid
                 </Link>
               </div>
-              <div className="assure">
-                <span><i className="tick">✓</i> Free to apply</span>
-                <span><i className="tick">✓</i> About 45 minutes</span>
-                <span><i className="tick">✓</i> Saves as you go</span>
-              </div>
+              <dl className="hero2-facts anim" style={{ animationDelay: "0.6s" }}>
+                <div>
+                  <dt>Duration</dt>
+                  <dd>Four years</dd>
+                </div>
+                <div>
+                  <dt>Award</dt>
+                  <dd>Full cost of attendance</dd>
+                </div>
+                <div>
+                  <dt>Deadline</dt>
+                  <dd>{programme.deadline}</dd>
+                </div>
+              </dl>
             </div>
-            <aside className="factcard" aria-label="Scholarship at a glance">
-              <img className="crestbig" src="/crest.png" alt={`${programme.university} crest`} width={150} height={139} />
-              <div className="univ">
-                New Jersey State
-                <small>University</small>
-              </div>
-              <div className="facts">
-                <div>
-                  <b>{programme.years} years</b>
-                  <span>Bachelor’s degree</span>
-                </div>
-                <div>
-                  <b>100%</b>
-                  <span>Tuition and fees</span>
-                </div>
-                <div>
-                  <b>$0</b>
-                  <span>Application fee</span>
-                </div>
-                <div>
-                  <b>{programme.deadline.replace(/ \d{4}$/, "")}</b>
-                  <span>Deadline, {programme.deadline.slice(-4)}</span>
-                </div>
-              </div>
-            </aside>
+            <div className="hero2-media" aria-hidden>
+              <figure className="vframe one">
+                <BackgroundVideo src="/media/hero-1.mp4" poster="/media/hero-1.jpg" />
+              </figure>
+              <figure className="vframe two">
+                <BackgroundVideo src="/media/hero-2.mp4" poster="/media/hero-2.jpg" delay={600} />
+              </figure>
+              <span className="vring" />
+            </div>
+          </div>
+          <a href="#statement" className="scrollcue" aria-label="Scroll to content">
+            <span />
+          </a>
+        </section>
+
+        <div className="ticker" aria-hidden>
+          <div className="ticker-track">
+            {Array.from({ length: 2 }).map((_, k) => (
+              <span key={k}>
+                {programme.cycle} <i>✦</i> Applications open {programme.opens} <i>✦</i> Deadline {programme.deadline} <i>✦</i> Decisions by {programme.decisions} <i>✦</i>{" "}
+                Matriculation {programme.startTerm} <i>✦</i>{" "}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <section className="section statement" id="statement">
+          <div className="wrap-narrow center" data-reveal>
+            <span className="rule" />
+            <p className="statement-text">
+              A student’s capacity to pay should never determine the reach of their ambition. The Access Scholarship exists so that the most promising
+              students, wherever they are in the world, can pursue a university education without financial barrier.
+            </p>
+            <p className="statement-by">The Scholarship Committee, {programme.university}</p>
           </div>
         </section>
 
-        <section className="section" id="coverage">
+        <section className="section alt" id="award">
           <div className="wrap">
-            <div className="section-head">
-              <span className="eyebrow">What the scholarship covers</span>
-              <h2>Everything you need to study, for all four years</h2>
-              <p className="lede">Scholars keep their award for the full degree while they stay in good academic standing. There is nothing to repay.</p>
+            <div className="section-head" data-reveal>
+              <span className="eyebrow">The Award</span>
+              <h2>Four years. The full cost of attendance.</h2>
+              <p className="lede">Each award is renewed annually for up to eight semesters while the scholar remains enrolled full-time and in good academic standing.</p>
             </div>
             <div className="grid4">
-              {coverage.map((c, i) => (
-                <article className="cover" key={c.title}>
+              {pillars.map((c, i) => (
+                <article className="cover" key={c.title} data-reveal style={{ transitionDelay: `${i * 90}ms` }}>
                   <span className="num">{String(i + 1).padStart(2, "0")}</span>
                   <h3>{c.title}</h3>
                   <p>{c.body}</p>
@@ -79,22 +110,53 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section alt" id="eligibility">
+        <section className="section beyond">
+          <div className="wrap">
+            <div className="beyond-grid">
+              <div data-reveal>
+                <span className="eyebrow light">Beyond tuition</span>
+                <h2>
+                  More than <CountUp value={annual.reduce((a, b) => a + b, 0)} prefix="$" /> in allowances every year
+                </h2>
+                <p>
+                  Alongside tuition, housing and dining, every scholar receives allowances for course materials, personal expenses, health insurance and
+                  travel, with further support for technology, research, study abroad and unforeseen hardship.
+                </p>
+                <Link className="btn btn-gold mt32" href="/financial-aid">
+                  View all {allowances.length} allowances
+                </Link>
+              </div>
+              <ul className="beyond-list">
+                {allowanceCategories.map((c, i) => (
+                  <li key={c.id} data-reveal style={{ transitionDelay: `${i * 90}ms` }}>
+                    <span className="k">{String(i + 1).padStart(2, "0")}</span>
+                    <div>
+                      <b>{c.title}</b>
+                      <p>{allowances.filter((a) => a.category === c.id).map((a) => a.title).join(" · ")}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section className="section" id="eligibility">
           <div className="wrap split">
-            <div>
+            <div data-reveal>
               <span className="eyebrow">Eligibility</span>
-              <h2 style={{ fontSize: "clamp(30px, 3.6vw, 42px)", margin: "14px 0" }}>Who can apply</h2>
+              <h2 className="h2">Who may apply</h2>
               <p className="lede">
-                The scholarship is for students with the ability and determination to succeed at university, and without the means to pay for it. Applicants from every
-                country are welcome.
+                The Access Scholarship is open to candidates of every nationality. The Committee seeks students of intellectual promise and strong character
+                for whom the cost of university would otherwise be prohibitive.
               </p>
               <Link href="/apply" className="btn btn-primary mt32">
-                Check if you qualify
+                Confirm your eligibility
               </Link>
             </div>
             <ul className="checklist">
-              {eligibility.map((e) => (
-                <li key={e}>
+              {eligibility.map((e, i) => (
+                <li key={e} data-reveal style={{ transitionDelay: `${i * 70}ms` }}>
                   <i className="tick">✓</i>
                   <span>{e}</span>
                 </li>
@@ -103,37 +165,35 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section" id="how">
+        <section className="section alt" id="how">
           <div className="wrap">
-            <div className="section-head">
-              <span className="eyebrow">How applying works</span>
-              <h2>One application, in three steps</h2>
-              <p className="lede">No fees, no printing and no posting. Everything happens in your applicant portal.</p>
+            <div className="section-head" data-reveal>
+              <span className="eyebrow">The application</span>
+              <h2>Applying to the Access Scholarship</h2>
+              <p className="lede">The application is completed entirely online through the applicant portal.</p>
             </div>
             <div className="steps3">
-              <div>
-                <h3>Check eligibility</h3>
-                <p>Answer four quick questions and create your account on the same screen. It takes about a minute.</p>
-              </div>
-              <div>
-                <h3>Complete your application</h3>
-                <p>Six short sections, two short essays and two documents. Every answer saves as you type, so you can stop and return from any device.</p>
-              </div>
-              <div>
-                <h3>Track your decision</h3>
-                <p>Once you submit, your portal shows where your application is at every stage, from review to interview to decision.</p>
-              </div>
+              {[
+                ["Confirm eligibility", "Answer four brief questions and create your applicant account in a single step."],
+                ["Complete the application", "Seven concise sections, two personal statements and two supporting documents. Your progress is saved automatically."],
+                ["Follow your application", "The portal shows each stage of the Committee’s review, from submission through interview to the admission decision."],
+              ].map(([t, b], i) => (
+                <div key={t} data-reveal style={{ transitionDelay: `${i * 90}ms` }}>
+                  <h3>{t}</h3>
+                  <p>{b}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="section alt" id="dates">
+        <section className="section" id="dates">
           <div className="wrap">
-            <div className="section-head">
+            <div className="section-head" data-reveal>
               <span className="eyebrow">Key dates</span>
-              <h2>The {programme.cycle} cycle</h2>
+              <h2>{programme.cycle} admission cycle</h2>
             </div>
-            <ol className="timeline">
+            <ol className="timeline" data-reveal>
               {timeline.map((t) => (
                 <li key={t.title}>
                   <span className="dot" />
@@ -146,14 +206,14 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section" id="faq">
+        <section className="section alt" id="faq">
           <div className="wrap split">
-            <div>
+            <div data-reveal>
               <span className="eyebrow">Questions</span>
-              <h2 style={{ fontSize: "clamp(30px, 3.6vw, 42px)", margin: "14px 0" }}>Before you apply</h2>
-              <p className="lede">Answers to what applicants ask us most.</p>
+              <h2 className="h2">Frequently asked questions</h2>
+              <p className="lede">Further guidance for candidates and their families.</p>
             </div>
-            <div className="faq">
+            <div className="faq" data-reveal>
               {faqs.map((f) => (
                 <details key={f.q}>
                   <summary>{f.q}</summary>
@@ -165,18 +225,19 @@ export default function Home() {
         </section>
 
         <section className="cta-band">
-          <div className="wrap">
+          <div className="wrap" data-reveal>
             <div>
-              <h2>Your place at {programme.university} could start here.</h2>
-              <p>Applications for {programme.startTerm} close on {programme.deadline}.</p>
+              <h2>Applications for {programme.startTerm} are now open.</h2>
+              <p>The application deadline is {programme.deadline} at 11:59 p.m. Eastern Time.</p>
             </div>
             <Link href="/apply" className="btn btn-gold">
-              Start your application
+              Begin your application
             </Link>
           </div>
         </section>
       </main>
       <SiteFooter />
+      <RevealObserver />
     </>
   );
 }

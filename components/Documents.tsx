@@ -16,7 +16,7 @@ export interface Doc {
 const MAX = 4 * 1024 * 1024;
 
 /** Photos straight from a phone are often too large; shrink them in the browser before upload. */
-async function shrink(file: File): Promise<File> {
+export async function shrink(file: File): Promise<File> {
   if (!/^image\/(jpeg|png|webp|heic)/.test(file.type) || file.size <= MAX * 0.9) return file;
   const bmp = await createImageBitmap(file).catch(() => null);
   if (!bmp) return file;

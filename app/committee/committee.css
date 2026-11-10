@@ -117,6 +117,8 @@
 .c-section-title { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin: 30px 0 12px; }
 .c-section-title:first-child { margin-top: 0; }
 
+.c-tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.c-tasks .c-task { border-bottom: 1px solid var(--line); }
 .c-task { display: flex; gap: 14px; align-items: flex-start; padding: 18px; text-decoration: none; color: var(--ink); border-left: 3px solid transparent; }
 .c-task.hot { border-left-color: var(--gold); }
 .c-task:hover { background: #fbfcfd; }
@@ -158,6 +160,9 @@
 .c-st.awarded { background: var(--ok-wash); color: var(--ok); }
 .c-st.waitlisted { background: #fff1e6; color: #a2520c; }
 .c-st.not_selected { background: #f3f4f6; color: #4b5563; }
+.c-st.accepted { background: #dff3e8; color: #0f5a37; }
+.c-st.declined_offer { background: #f3f4f6; color: #6b7280; }
+.c-st.enrolled { background: var(--navy); color: #fff; }
 
 /* Filters + table */
 .c-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }

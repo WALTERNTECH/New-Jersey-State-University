@@ -2,6 +2,8 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createHash, randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
 import { NextResponse } from "next/server";
+import { redirect } from "next/navigation";
+import { cache } from "react";
 import { db } from "./db";
 
 export const SESSION_COOKIE = "njsu_session";
@@ -14,6 +16,7 @@ export interface Applicant {
   email: string;
   first_name: string;
   last_name: string;
+  must_change: boolean;
 }
 
 export async function createSession(applicantId: string) {
@@ -30,16 +33,25 @@ export async function createSession(applicantId: string) {
   });
 }
 
-export async function currentApplicant(): Promise<Applicant | null> {
+/** The signed-in applicant, if any. Cached for the length of one request. */
+export const currentApplicant = cache(async (): Promise<Applicant | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const q = await db();
   const { rows } = await q.query<Applicant & Record<string, unknown>>(
-    `select a.id, a.email, a.first_name, a.last_name from sessions s join applicants a on a.id = s.applicant_id
+    `select a.id, a.email, a.first_name, a.last_name, a.must_change from sessions s join applicants a on a.id = s.applicant_id
      where s.token_hash = $1 and s.expires_at > now()`,
     [sha256(token)],
   );
   return rows[0] ?? null;
+});
+
+/** For portal pages: signs people in first, and sends anyone holding a temporary password to replace it. */
+export async function requireApplicant(next?: string): Promise<Applicant> {
+  const me = await currentApplicant();
+  if (!me) redirect(next ? `/signin?next=${encodeURIComponent(next)}` : "/signin");
+  if (me.must_change) redirect("/portal/password?required=1");
+  return me;
 }
 
 export async function endSession() {
@@ -50,6 +62,13 @@ export async function endSession() {
     await q.query("delete from sessions where token_hash = $1", [sha256(token)]);
   }
   jar.delete(SESSION_COOKIE);
+}
+
+/** Signs an applicant out everywhere except the device making this request. */
+export async function endOtherSessions(applicantId: string) {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value ?? "";
+  const q = await db();
+  await q.query("delete from sessions where applicant_id = $1 and token_hash <> $2", [applicantId, sha256(token)]);
 }
 
 /** Mutating API calls must come from our own pages: a custom header plus a same-origin check. */

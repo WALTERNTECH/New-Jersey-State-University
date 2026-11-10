@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/Chrome";
-import { currentApplicant } from "@/lib/auth";
+import { requireApplicant } from "@/lib/auth";
 import { applicationFor, documentsFor } from "@/lib/application";
 import Wizard from "./Wizard";
 
@@ -8,8 +8,7 @@ export const metadata = { title: "Your application", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
 export default async function ApplicationPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
-  const me = await currentApplicant();
-  if (!me) redirect("/signin");
+  const me = await requireApplicant("/portal/application");
   const app = await applicationFor(me.id);
   if (!app) redirect("/apply");
   if (app.status !== "draft") redirect("/portal");

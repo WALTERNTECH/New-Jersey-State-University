@@ -21,13 +21,21 @@ const I = {
   dash: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></svg>,
   apps: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></svg>,
   me: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3 8-8" /><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" /></svg>,
+  scholars: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M2 9l10-5 10 5-10 5z" /><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5" /></svg>,
   admin: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M17 11a3 3 0 1 0 0-6M21.5 20a5.5 5.5 0 0 0-4-5.3" /></svg>,
   chev: <svg className="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>,
   search: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>,
   menu: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 7h16M4 12h16M4 17h16" /></svg>,
 };
 
-const crumbNames: Record<string, string> = { applications: "Applications", staff: "Committee members", activity: "Activity log", account: "Your account" };
+const crumbNames: Record<string, string> = {
+  applications: "Applications",
+  allowances: "Allowance requests",
+  arrivals: "Arrivals",
+  staff: "Committee members",
+  activity: "Activity log",
+  account: "Your account",
+};
 
 export default function Shell({ name, roleLabel, owner, decide, counts, children }: ShellProps) {
   const path = usePathname();
@@ -51,7 +59,7 @@ export default function Shell({ name, roleLabel, owner, decide, counts, children
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const decided = (counts.awarded ?? 0) + (counts.waitlisted ?? 0) + (counts.not_selected ?? 0);
+  const decided = ["awarded", "waitlisted", "not_selected", "accepted", "declined_offer", "enrolled"].reduce((a, k) => a + (counts[k] ?? 0), 0);
   const groups: Group[] = [
     {
       id: "apps",
@@ -64,6 +72,16 @@ export default function Shell({ name, roleLabel, owner, decide, counts, children
         { href: "/committee/applications?status=decided", label: "Decided", count: decided },
         { href: "/committee/applications?status=all", label: "All submitted" },
         { href: "/committee/applications?status=draft", label: "Still in progress", count: counts.draft },
+      ],
+    },
+    {
+      id: "scholars",
+      label: "Admitted scholars",
+      icon: I.scholars,
+      items: [
+        { href: "/committee/allowances?status=submitted", label: "Allowance requests", count: counts.allowances_pending, hot: counts.allowances_pending > 0 },
+        { href: "/committee/arrivals", label: "Due to report", count: counts.accepted },
+        { href: "/committee/arrivals?view=enrolled", label: "Enrolled", count: counts.enrolled },
       ],
     },
     {
@@ -80,13 +98,19 @@ export default function Shell({ name, roleLabel, owner, decide, counts, children
     groups.push({ id: "admin", label: "Administration", icon: I.admin, items });
   }
 
+  const view = params.get("view") ?? "";
   const isActive = (href: string) => {
     const u = new URL(href, "http://x");
     if (u.pathname !== path) return false;
     const s = u.searchParams.get("status");
-    return s ? s === status || (s === "all" && !status) : true;
+    const v = u.searchParams.get("view") ?? "";
+    if (u.pathname === "/committee/arrivals") return v === view;
+    return s ? s === status || (s === "all" && !status) || (u.pathname === "/committee/allowances" && s === "submitted" && !status) : true;
   };
-  const inGroup = (g: Group) => g.items.some((i) => isActive(i.href)) || (g.id === "apps" && path.startsWith("/committee/applications/"));
+  const inGroup = (g: Group) =>
+    g.items.some((i) => isActive(i.href)) ||
+    (g.id === "apps" && path.startsWith("/committee/applications/")) ||
+    (g.id === "scholars" && path.startsWith("/committee/allowances/"));
 
   const parts = path.split("/").filter(Boolean).slice(1);
   const crumbs = parts.length === 0 ? ["Dashboard"] : [crumbNames[parts[0]] ?? parts[0], ...(parts[1] ? ["Application"] : [])];

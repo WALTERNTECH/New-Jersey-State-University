@@ -8,6 +8,9 @@ export const statusColors: Record<string, string> = {
   awarded: "#157347",
   waitlisted: "#d9822b",
   not_selected: "#8b95a3",
+  accepted: "#0f5a37",
+  declined_offer: "#b8bec8",
+  enrolled: "#06243c",
 };
 
 export function StatusChip({ status }: { status: string }) {
@@ -42,6 +45,10 @@ export const actionLabels: Record<string, string> = {
   staff_enabled: "turned on access for",
   staff_reset: "reset the sign-in of",
   export: "exported applications",
+  allowance_approved: "approved an allowance for",
+  allowance_declined: "declined an allowance for",
+  allowance_disbursed: "recorded an allowance disbursement for",
+  applicant_reset: "issued a temporary password to",
 };
 
 export function Bars({ rows }: { rows: { label: string; n: number }[] }) {

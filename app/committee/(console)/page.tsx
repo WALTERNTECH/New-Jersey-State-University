@@ -28,9 +28,9 @@ export default async function Dashboard() {
     ),
   ]);
 
-  const submittedTotal = c.submitted + c.under_review + c.interview + c.awarded + c.waitlisted + c.not_selected;
+  const submittedTotal = c.submitted + c.under_review + c.interview + c.awarded + c.waitlisted + c.not_selected + c.accepted + c.declined_offer + c.enrolled;
   const daysLeft = Math.ceil((Date.parse(programme.deadlineISO) - Date.now()) / 864e5);
-  const pipeline = (["draft", "submitted", "under_review", "interview", "awarded", "waitlisted", "not_selected"] as const).map((s) => ({ s, n: c[s] }));
+  const pipeline = (["draft", "submitted", "under_review", "interview", "awarded", "accepted", "enrolled", "waitlisted", "not_selected", "declined_offer"] as const).map((s) => ({ s, n: c[s] }));
   const pipeTotal = Math.max(1, pipeline.reduce((a, b) => a + b.n, 0));
 
   const perDay = new Map(daily.rows.map((r) => [r.d, Number(r.n)]));
@@ -47,6 +47,8 @@ export default async function Dashboard() {
     ...(canDecide(me)
       ? [{ n: c.interview, title: "Interviewed, awaiting decision", sub: "Ready for the chair to decide", href: "/committee/applications?status=interview" }]
       : [{ n: c.interview, title: "At interview", sub: "Shortlisted applicants", href: "/committee/applications?status=interview" }]),
+    { n: c.allowances_pending, title: "Allowance requests to decide", sub: "From admitted and enrolled scholars", href: "/committee/allowances?status=submitted" },
+    { n: c.accepted, title: "Scholars due to report", sub: "Offer accepted, not yet enrolled", href: "/committee/arrivals" },
   ];
 
   return (
@@ -64,9 +66,9 @@ export default async function Dashboard() {
       </div>
 
       <h2 className="c-section-title">Needs a person</h2>
-      <div className="c-card c-grid c-cols-3" style={{ gap: 0 }}>
-        {tasks.map((t, i) => (
-          <Link key={t.title} href={t.href} className={`c-task${t.n > 0 ? " hot" : ""}`} style={i ? { borderTop: 0 } : undefined}>
+      <div className="c-card c-tasks">
+        {tasks.map((t) => (
+          <Link key={t.title} href={t.href} className={`c-task${t.n > 0 ? " hot" : ""}`}>
             <span className="big">{t.n}</span>
             <span>
               <b>{t.title}</b>
@@ -92,9 +94,9 @@ export default async function Dashboard() {
           <small>{c.draft} more in progress</small>
         </div>
         <div className="c-card c-stat">
-          <span>Awarded</span>
-          <b>{c.awarded}</b>
-          <small>{c.waitlisted} waitlisted</small>
+          <span>Admitted</span>
+          <b>{c.awarded + c.accepted + c.enrolled}</b>
+          <small>{c.accepted + c.enrolled} accepted · {c.enrolled} enrolled</small>
         </div>
       </div>
 

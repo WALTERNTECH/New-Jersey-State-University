@@ -26,7 +26,10 @@ export async function POST(req: Request, { params }: Ctx) {
     if (!rows[0]) return { error: fail(404, "Not found") };
     const from = rows[0].status;
     if (!(nextStatuses[from] ?? []).includes(to as never)) return { error: fail(409, `An application that is ${statusLabels[from]?.toLowerCase() ?? from} can't move to ${statusLabels[to]?.toLowerCase() ?? to}`) };
-    await t.query("update applications set status = $2, updated_at = now() where id = $1", [id, to]);
+    await t.query(
+      "update applications set status = $2, updated_at = now(), enrolled_at = case when $2 = 'enrolled' then now() else enrolled_at end where id = $1",
+      [id, to],
+    );
     await t.query("insert into status_events (application_id, status, note, staff_id) values ($1, $2, $3, $4)", [id, to, note, me.id]);
     await audit(me.id, "status_change", rows[0].reference, `${statusLabels[from] ?? from} → ${statusLabels[to] ?? to}${note ? ` · ${note}` : ""}`, t);
     return { from };

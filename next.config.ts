@@ -30,6 +30,7 @@ const config: NextConfig = {
         ],
       },
       { source: "/portal/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex" }] },
+      { source: "/media/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }] },
       { source: "/committee/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }, { key: "Cache-Control", value: "private, no-store" }] },
     ];
   },

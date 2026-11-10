@@ -3,9 +3,9 @@ import { programme } from "@/lib/content";
 import { currentApplicant } from "@/lib/auth";
 import SignOutButton from "./SignOutButton";
 
-export function Brand({ sub = "Office of Student Financial Aid" }: { sub?: string }) {
+export function Brand({ sub = "Admissions and Financial Aid", light = false }: { sub?: string; light?: boolean }) {
   return (
-    <Link href="/" className="brand" aria-label={`${programme.university} home`}>
+    <Link href="/" className={`brand${light ? " light" : ""}`} aria-label={`${programme.university} home`}>
       <span className="crest">
         <img src="/crest.png" alt="" width={40} height={37} />
       </span>
@@ -23,7 +23,9 @@ export async function SiteHeader({ portal = false }: { portal?: boolean }) {
     <>
       <div className="utility">
         <div className="wrap">
-          <span className="tag">{programme.name} · {programme.cycle} · Applications close {programme.deadline}</span>
+          <span className="tag">
+            {programme.name} · {programme.cycle} · Applications close {programme.deadline}
+          </span>
           <nav aria-label="Account">
             {me ? (
               <>
@@ -41,23 +43,23 @@ export async function SiteHeader({ portal = false }: { portal?: boolean }) {
       </div>
       <header className="masthead">
         <div className="wrap">
-          <Brand sub={portal ? "Applicant portal" : "Office of Student Financial Aid"} />
+          <Brand sub={portal ? "Applicant portal" : "Admissions and Financial Aid"} />
           <nav className="mainnav" aria-label="Main">
             {!portal && (
               <>
-                <Link className="link" href="/#coverage">The scholarship</Link>
+                <Link className="link" href="/#award">The Scholarship</Link>
+                <Link className="link" href="/financial-aid">Financial Aid</Link>
                 <Link className="link" href="/#eligibility">Eligibility</Link>
-                <Link className="link" href="/#dates">Key dates</Link>
-                <Link className="link" href="/#faq">Questions</Link>
+                <Link className="link" href="/#dates">Key Dates</Link>
               </>
             )}
             {me ? (
               <Link className="btn btn-primary btn-sm" href="/portal">
-                {portal ? "Dashboard" : "Continue application"}
+                {portal ? "Dashboard" : "Applicant portal"}
               </Link>
             ) : (
               <Link className="btn btn-primary btn-sm" href="/apply">
-                Apply now
+                Apply
               </Link>
             )}
           </nav>
@@ -73,23 +75,29 @@ export function SiteFooter() {
     <footer className="footer">
       <div className="wrap">
         <div className="top">
-          <div style={{ maxWidth: 360 }}>
-            <Brand />
+          <div style={{ maxWidth: 380 }}>
+            <Brand light />
             <p className="mt16">
-              The {programme.name} funds four years of undergraduate study for students whose families cannot meet the cost of university.
+              The {programme.name} meets the full cost of attendance for four years of undergraduate study for students of exceptional promise and
+              demonstrated financial need.
             </p>
           </div>
           <nav aria-label="Footer">
             <div>
-              <b>Scholarship</b>
-              <Link href="/#coverage">What it covers</Link>
-              <Link href="/#eligibility">Who can apply</Link>
-              <Link href="/#dates">Key dates</Link>
-              <Link href="/#faq">Questions</Link>
+              <b>Admissions</b>
+              <Link href="/#award">The Scholarship</Link>
+              <Link href="/#eligibility">Eligibility</Link>
+              <Link href="/#dates">Key Dates</Link>
+              <Link href="/#faq">Frequently Asked Questions</Link>
+            </div>
+            <div>
+              <b>Financial Aid</b>
+              <Link href="/financial-aid">Allowances</Link>
+              <Link href="/financial-aid#how">How allowances are requested</Link>
             </div>
             <div>
               <b>Applicants</b>
-              <Link href="/apply">Start an application</Link>
+              <Link href="/apply">Begin an application</Link>
               <Link href="/signin">Sign in</Link>
               <Link href="/portal">Applicant portal</Link>
             </div>
@@ -102,9 +110,13 @@ export function SiteFooter() {
             )}
           </nav>
         </div>
+        <p className="notice">
+          <b>Fraud notice.</b> New Jersey State University does not charge candidates for any part of the admission or scholarship process and never requests
+          payment by telephone, messaging service or email. Requests for payment made in the University’s name should be disregarded.
+        </p>
         <div className="bottom">
           <span>© {year} {programme.university}</span>
-          <span>Applying is free. We never ask for payment at any stage of the scholarship process.</span>
+          <span>{programme.office}</span>
         </div>
       </div>
     </footer>

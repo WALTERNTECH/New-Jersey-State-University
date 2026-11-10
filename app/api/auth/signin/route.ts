@@ -14,12 +14,12 @@ export async function POST(req: Request) {
   if (!email || !password) return fail(400, "Enter your email and password");
 
   const q = await db();
-  const { rows } = await q.query<{ id: string; password_hash: string; locked: boolean }>(
-    "select id, password_hash, coalesce(locked_until > now(), false) as locked from applicants where email = $1",
+  const { rows } = await q.query<{ id: string; password_hash: string; locked: boolean; must_change: boolean }>(
+    "select id, password_hash, must_change, coalesce(locked_until > now(), false) as locked from applicants where email = $1",
     [email],
   );
   const a = rows[0];
-  if (a?.locked) return fail(429, "Too many attempts. Try again in 15 minutes.");
+  if (a?.locked) return fail(429, "For your security, sign-in has been paused after several unsuccessful attempts. Please try again in 15 minutes.");
   const ok = await bcrypt.compare(password, a?.password_hash ?? DUMMY);
   if (!a || !ok) {
     if (a) {
@@ -32,9 +32,9 @@ export async function POST(req: Request) {
         [a.id],
       );
     }
-    return fail(401, "That email and password don't match our records");
+    return fail(401, "The email address or password is incorrect.");
   }
   await q.query("update applicants set failed_logins = 0, locked_until = null where id = $1", [a.id]);
   await createSession(a.id);
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, next: a.must_change ? "/portal/password?required=1" : null });
 }

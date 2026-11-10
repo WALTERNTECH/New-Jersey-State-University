@@ -163,6 +163,46 @@ export function ScoreForm({ id, initial, open }: { id: string; initial: Partial<
   );
 }
 
+/** Issues a temporary password once the Office has verified an applicant's identity. Shown once. */
+export function ResetApplicantPassword({ id, email }: { id: string; email: string }) {
+  const [busy, setBusy] = useState(false);
+  const [pw, setPw] = useState("");
+  const [error, setError] = useState("");
+  if (pw)
+    return (
+      <div className="c-once stack" style={{ gap: 8 }} role="status">
+        <b>Temporary password for {email}</b>
+        <code>{pw}</code>
+        <span className="small">Shown once. Give it to the applicant only after verifying their identity. They must replace it when they next sign in.</span>
+        <div><button className="btn btn-ghost btn-sm" onClick={() => setPw("")}>Done</button></div>
+      </div>
+    );
+  return (
+    <>
+      <button
+        className="btn btn-ghost btn-sm"
+        disabled={busy}
+        onClick={async () => {
+          if (!confirm(`Issue a temporary password for ${email}? Their current password stops working and they are signed out everywhere.`)) return;
+          setBusy(true);
+          setError("");
+          try {
+            const r = await api<{ password: string }>(`/api/committee/applications/${id}/reset-password`, { method: "POST" });
+            setPw(r.password);
+          } catch (e) {
+            setError((e as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? "Issuing…" : "Issue temporary password"}
+      </button>
+      {error && <span className="small" style={{ color: "var(--err)" }}>{error}</span>}
+    </>
+  );
+}
+
 export function NoteForm({ id }: { id: string }) {
   const router = useRouter();
   const [body, setBody] = useState("");

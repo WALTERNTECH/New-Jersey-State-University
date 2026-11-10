@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteFooter, SiteHeader } from "@/components/Chrome";
 import PrintButton from "@/components/PrintButton";
-import { currentApplicant } from "@/lib/auth";
+import { requireApplicant } from "@/lib/auth";
 import { applicationFor, documentsFor } from "@/lib/application";
 import { programme } from "@/lib/content";
 import { documentKinds } from "@/lib/form";
@@ -12,8 +12,7 @@ export const metadata = { title: "Application submitted", robots: { index: false
 export const dynamic = "force-dynamic";
 
 export default async function Submitted() {
-  const me = await currentApplicant();
-  if (!me) redirect("/signin");
+  const me = await requireApplicant("/portal");
   const app = await applicationFor(me.id);
   if (!app) redirect("/apply");
   if (app.status === "draft") redirect("/portal/application?step=review");
@@ -33,7 +32,7 @@ export default async function Submitted() {
           </div>
           <h1>Thank you, {name}.</h1>
           <p className="lede">
-            Your application for the {programme.name} has been received. Keep your reference number; you will not need to pay anything at any stage.
+            Your application for the {programme.name} has been received by the Office of Admissions. Please quote your application reference in any correspondence.
           </p>
 
           <div className="receipt">
@@ -52,14 +51,14 @@ export default async function Submitted() {
           </div>
 
           <div className="next">
-            <h2>What happens next</h2>
+            <h2>Next steps</h2>
             <ol>
               {missingOptional.length > 0 && (
                 <li>
                   <div>
-                    <b>Add any remaining documents</b>
+                    <b>Submit any supplementary documents</b>
                     <p>
-                      You can still add your {missingOptional.map((k) => (k.kind === "english" ? k.label : k.label.toLowerCase())).join(" and ")} from your portal. They strengthen your application.
+                      Your {missingOptional.map((k) => (k.kind === "english" ? k.label : k.label.toLowerCase())).join(" and ")} may still be added through the applicant portal and will strengthen your application.
                     </p>
                     <p className="when">Within 14 days</p>
                   </div>
@@ -67,24 +66,24 @@ export default async function Submitted() {
               )}
               <li>
                 <div>
-                  <b>We verify your documents and contact your recommender</b>
+                  <b>Verification and recommendation</b>
                   <p>
-                    We will email {app.data.rec_name || "your recommender"} directly. Your portal status changes to “Under review” once this begins.
+                    The Office of Admissions will verify your documents and write to {app.data.rec_name || "your recommender"} directly. Your status will change to “Under review” when this begins.
                   </p>
                   <p className="when">Within 3 weeks of the deadline</p>
                 </div>
               </li>
               <li>
                 <div>
-                  <b>Shortlisted applicants are invited to interview</b>
-                  <p>A relaxed 30-minute video conversation with two members of the scholarship committee. We will agree a time that suits you.</p>
+                  <b>Interviews</b>
+                  <p>Shortlisted candidates are invited to a 30-minute conversation with members of the Scholarship Committee, held by video at a mutually convenient time.</p>
                   <p className="when">{programme.interviews}</p>
                 </div>
               </li>
               <li>
                 <div>
-                  <b>You receive a decision</b>
-                  <p>Decisions appear in your portal and are sent to {me.email}. Awarded scholars receive their enrolment and travel guidance.</p>
+                  <b>Admission decision</b>
+                  <p>Decisions are released in the applicant portal and sent to {me.email}. Admitted scholars receive their offer, the terms of their award and guidance on enrolment and travel.</p>
                   <p className="when">By {programme.decisions}</p>
                 </div>
               </li>
@@ -93,13 +92,10 @@ export default async function Submitted() {
 
           <div className="flex mt32" style={{ justifyContent: "center" }}>
             <Link href="/portal" className="btn btn-primary">
-              Go to your portal
+              Return to the applicant portal
             </Link>
             <PrintButton />
           </div>
-          <p className="small muted center mt24">
-            A message asking you to pay a fee to secure this scholarship did not come from {programme.university}.
-          </p>
         </div>
       </main>
       <SiteFooter />
