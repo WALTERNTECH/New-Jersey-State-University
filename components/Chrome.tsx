@@ -110,13 +110,9 @@ export function SiteFooter() {
             )}
           </nav>
         </div>
-        <p className="notice">
-          <b>Fraud notice.</b> New Jersey State University does not charge candidates for any part of the admission or scholarship process and never requests
-          payment by telephone, messaging service or email. Requests for payment made in the University’s name should be disregarded.
-        </p>
         <div className="bottom">
           <span>© {year} {programme.university}</span>
-          <span>{programme.office}</span>
+          <span className="notice">We never charge applicants. Ignore any request for payment in our name.</span>
         </div>
       </div>
     </footer>
