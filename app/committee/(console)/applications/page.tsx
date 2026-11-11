@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { requireStaffPage } from "@/lib/staff";
-import { fullName, statusCounts } from "@/lib/committee";
+import { canDecide, requireStaffPage } from "@/lib/staff";
+import { AVG_SCORE_SQL, fullName, statusCounts } from "@/lib/committee";
 import { programmes } from "@/lib/content";
 import FilterBar from "@/components/committee/FilterBar";
 import { StatusChip, when } from "@/components/committee/bits";
+import { BulkBar } from "@/components/committee/Workflow";
 
 export const metadata = { title: "Applications" };
 export const dynamic = "force-dynamic";
@@ -59,7 +60,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
   const q = await db();
   const sql = `
     select a.id, a.reference, a.status, a.data, a.submitted_at, a.updated_at, p.email,
-      (select round(avg(s.academic + s.need + s.essays + s.recommendation)::numeric, 1) from scores s where s.application_id = a.id)::float as avg_score,
+      ${AVG_SCORE_SQL}::float as avg_score,
       (select count(*)::int from scores s where s.application_id = a.id) as n_scores,
       count(*) over()::int as total
     from applications a join applicants p on p.id = a.applicant_id
@@ -72,6 +73,8 @@ export default async function Applications({ searchParams }: { searchParams: Pro
     statusCounts(me.id),
   ]);
   const total = rows[0]?.total ?? 0;
+  // Bulk moves make sense for applications under consideration, not drafts or finished cases.
+  const bulk = ["submitted", "under_review", "interview", "mine", "all"].includes(status);
   const countFor = (id: string) =>
     id === "decided" ? counts.awarded + counts.waitlisted + counts.not_selected + counts.accepted + counts.declined_offer + counts.enrolled :
     id === "all" ? counts.submitted + counts.under_review + counts.interview + counts.awarded + counts.waitlisted + counts.not_selected + counts.accepted + counts.declined_offer + counts.enrolled :
@@ -93,6 +96,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
           <p>{total} {total === 1 ? "application" : "applications"}{sp.q ? ` matching “${sp.q}”` : ""}</p>
         </div>
       </div>
+      {bulk && <BulkBar canDecide={canDecide(me)} />}
       <div className="c-card">
         <nav className="c-tabs" aria-label="Stage">
           {tabs.map((t) => (
@@ -106,6 +110,11 @@ export default async function Applications({ searchParams }: { searchParams: Pro
           <table className="c-table">
             <thead>
               <tr>
+                {bulk && (
+                  <th className="c-pick">
+                    <input type="checkbox" name="pickall" aria-label="Select all on this page" />
+                  </th>
+                )}
                 <th>Applicant</th>
                 <th>Reference</th>
                 <th>Country</th>
@@ -119,6 +128,11 @@ export default async function Applications({ searchParams }: { searchParams: Pro
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} style={{ position: "relative" }}>
+                  {bulk && (
+                    <td className="c-pick">
+                      <input type="checkbox" name="pick" value={r.id} aria-label={`Select ${fullName(r.data)}`} />
+                    </td>
+                  )}
                   <td>
                     <a className="rowlink" href={`/committee/applications/${r.id}`}>
                       {fullName(r.data)}

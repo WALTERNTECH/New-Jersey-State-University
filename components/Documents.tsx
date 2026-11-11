@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { documentKinds } from "@/lib/form";
+import { documentKinds, enrolmentDocs, reviewLabels } from "@/lib/form";
 import { api, fmtSize } from "@/lib/client";
 
 export interface Doc {
@@ -11,6 +11,8 @@ export interface Doc {
   mime: string;
   size: number;
   created_at: string;
+  review?: string;
+  review_note?: string | null;
 }
 
 const MAX = 4 * 1024 * 1024;
@@ -42,15 +44,18 @@ function Icon({ done }: { done: boolean }) {
   );
 }
 
-function Slot({ kind, label, hint, required, doc, locked, onChange }: {
+function Slot({ kind, label, hint, required, doc, locked, reviewed, onChange }: {
   kind: string;
   label: string;
   hint: string;
   required: boolean;
   doc?: Doc;
   locked: boolean;
+  reviewed?: boolean;
   onChange: (d: Doc | null, kind: string) => void;
 }) {
+  const review = reviewed && doc ? doc.review ?? "pending" : null;
+  const final = review === "verified";
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [drag, setDrag] = useState(false);
@@ -93,25 +98,29 @@ function Slot({ kind, label, hint, required, doc, locked, onChange }: {
   return (
     <div>
       <div
-        className={`doc${doc ? " has" : ""}${drag ? " drag" : ""}`}
+        className={`doc${doc && review !== "rejected" ? " has" : ""}${review === "rejected" ? " bad" : ""}${drag ? " drag" : ""}`}
         onDragOver={(e) => {
           e.preventDefault();
-          setDrag(true);
+          if (!final) setDrag(true);
         }}
         onDragLeave={() => setDrag(false)}
         onDrop={(e) => {
           e.preventDefault();
           setDrag(false);
-          upload(e.dataTransfer.files[0]);
+          if (!final) upload(e.dataTransfer.files[0]);
         }}
       >
         <span className="ico">
-          <Icon done={!!doc} />
+          <Icon done={!!doc && review !== "rejected"} />
         </span>
         <div className="info">
           <b>
             {label}
-            <span className={`req${required ? " must" : ""}`}>{required ? "Required" : "Optional"}</span>
+            {review ? (
+              <span className={`rv ${review}`}>{reviewLabels[review]}</span>
+            ) : (
+              <span className={`req${required ? " must" : ""}`}>{required ? "Required" : "Optional"}</span>
+            )}
           </b>
           {doc ? (
             <span className="file">
@@ -123,18 +132,21 @@ function Slot({ kind, label, hint, required, doc, locked, onChange }: {
           ) : (
             <span className="file">{hint}</span>
           )}
+          {review === "rejected" && doc?.review_note && <span className="rv-note">Please replace this file: {doc.review_note}</span>}
         </div>
-        <div className="acts">
-          <input ref={input} type="file" accept=".pdf,.jpg,.jpeg,.png,image/*,application/pdf" hidden onChange={(e) => upload(e.target.files?.[0])} />
-          {doc && !locked && (
-            <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={remove}>
-              Remove
+        {!final && (
+          <div className="acts">
+            <input ref={input} type="file" accept=".pdf,.jpg,.jpeg,.png,image/*,application/pdf" hidden onChange={(e) => upload(e.target.files?.[0])} />
+            {doc && !locked && (
+              <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={remove}>
+                Remove
+              </button>
+            )}
+            <button type="button" className={`btn btn-sm ${doc && review !== "rejected" ? "btn-ghost" : "btn-primary"}`} disabled={busy} onClick={() => input.current?.click()}>
+              {busy ? "Uploading…" : review === "rejected" ? "Upload replacement" : doc ? "Replace" : "Upload"}
             </button>
-          )}
-          <button type="button" className={`btn btn-sm ${doc ? "btn-ghost" : "btn-primary"}`} disabled={busy} onClick={() => input.current?.click()}>
-            {busy ? "Uploading…" : doc ? "Replace" : "Upload"}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
       {error && (
         <p className="error small mt8" role="alert" style={{ color: "var(--err)" }}>
@@ -145,14 +157,16 @@ function Slot({ kind, label, hint, required, doc, locked, onChange }: {
   );
 }
 
-export default function Documents({ docs, locked = false, onChange, only }: {
+export default function Documents({ docs, locked = false, onChange, only, set = "application" }: {
   docs: Doc[];
   locked?: boolean;
   onChange: (docs: Doc[]) => void;
   only?: "optional";
+  set?: "application" | "enrolment";
 }) {
   const latest = (kind: string) => [...docs].reverse().find((d) => d.kind === kind);
-  const kinds = only === "optional" ? documentKinds.filter((k) => !k.required) : documentKinds;
+  const base = set === "enrolment" ? enrolmentDocs : documentKinds;
+  const kinds = only === "optional" ? base.filter((k) => !k.required) : base;
   return (
     <div className="stack">
       {kinds.map((k) => (
@@ -161,6 +175,7 @@ export default function Documents({ docs, locked = false, onChange, only }: {
           {...k}
           doc={latest(k.kind)}
           locked={locked}
+          reviewed={set === "enrolment"}
           onChange={(d, kind) => onChange(d ? [...docs.filter((x) => locked || x.kind !== kind), d] : docs.filter((x) => x.kind !== kind))}
         />
       ))}

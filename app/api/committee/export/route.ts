@@ -17,7 +17,7 @@ export async function GET() {
   const q = await db();
   const { rows } = await q.query<{ reference: string; status: string; submitted_at: string; email: string; data: Record<string, string>; avg: number | null; n: number }>(
     `select a.reference, a.status, a.submitted_at, p.email, a.data,
-       (select round(avg(academic + need + essays + recommendation)::numeric, 1) from scores s where s.application_id = a.id) as avg,
+       (select round(avg(academic + need + essays + potential)::numeric, 1) from scores s where s.application_id = a.id) as avg,
        (select count(*)::int from scores s where s.application_id = a.id) as n
      from applications a join applicants p on p.id = a.applicant_id
      where a.status <> 'draft' order by a.submitted_at`,

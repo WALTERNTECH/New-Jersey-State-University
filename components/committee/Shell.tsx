@@ -32,6 +32,7 @@ const crumbNames: Record<string, string> = {
   applications: "Applications",
   allowances: "Allowance requests",
   arrivals: "Arrivals",
+  emails: "Email log",
   staff: "Committee members",
   activity: "Activity log",
   account: "Your account",
@@ -79,8 +80,9 @@ export default function Shell({ name, roleLabel, owner, decide, counts, children
       label: "Admitted scholars",
       icon: I.scholars,
       items: [
+        { href: "/committee/arrivals?view=documents", label: "Documents to verify", count: counts.docs_pending, hot: counts.docs_pending > 0 },
         { href: "/committee/allowances?status=submitted", label: "Allowance requests", count: counts.allowances_pending, hot: counts.allowances_pending > 0 },
-        { href: "/committee/arrivals", label: "Due to report", count: counts.accepted },
+        { href: "/committee/arrivals?view=accepted", label: "Due to report", count: counts.accepted },
         { href: "/committee/arrivals?view=enrolled", label: "Enrolled", count: counts.enrolled },
       ],
     },
@@ -93,6 +95,7 @@ export default function Shell({ name, roleLabel, owner, decide, counts, children
   ];
   if (owner || decide) {
     const items: Item[] = [];
+    items.push({ href: "/committee/emails", label: "Email log", count: counts.emails_unsent || undefined, hot: counts.emails_unsent > 0 });
     if (owner) items.push({ href: "/committee/staff", label: "Committee members" }, { href: "/committee/activity", label: "Activity log" });
     items.push({ href: "/api/committee/export", label: "Export to spreadsheet" });
     groups.push({ id: "admin", label: "Administration", icon: I.admin, items });
@@ -104,7 +107,7 @@ export default function Shell({ name, roleLabel, owner, decide, counts, children
     if (u.pathname !== path) return false;
     const s = u.searchParams.get("status");
     const v = u.searchParams.get("view") ?? "";
-    if (u.pathname === "/committee/arrivals") return v === view;
+    if (u.pathname === "/committee/arrivals") return v === (view || "accepted");
     return s ? s === status || (s === "all" && !status) || (u.pathname === "/committee/allowances" && s === "submitted" && !status) : true;
   };
   const inGroup = (g: Group) =>

@@ -2,12 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteFooter, SiteHeader } from "@/components/Chrome";
 import PostDocs from "@/components/PostDocs";
+import EnrolmentDocs from "@/components/EnrolmentDocs";
 import { ArrivalForm, OfferReply } from "@/components/portal/Admission";
 import { requireApplicant } from "@/lib/auth";
 import { applicationFor, documentsFor, eventsFor, progress } from "@/lib/application";
 import { requestsFor, requestStatusLabels } from "@/lib/allowances";
 import { allowanceBySlug, allowances, programme } from "@/lib/content";
-import { statusLabels } from "@/lib/form";
+import { awardLines } from "@/lib/award";
+import { letterFor, letterIsCurrent } from "@/lib/letter";
+import { enrolKindSet, enrolmentDocs, statusLabels } from "@/lib/form";
 import { fmtDate } from "@/lib/client";
 
 export const metadata = { title: "Applicant portal", robots: { index: false } };
@@ -30,7 +33,7 @@ const headline: Record<string, string> = {
 function message(status: string, email: string) {
   switch (status) {
     case "under_review":
-      return "The Scholarship Committee is reviewing your application. Your documents are being verified and your recommender has been contacted. No action is required of you at this time.";
+      return "The Scholarship Committee is reviewing your application and verifying your academic documents. No action is required of you at this time.";
     case "interview":
       return `Congratulations on being shortlisted. The Office of Admissions will write to you at ${email} to arrange a 30-minute interview with members of the Scholarship Committee.`;
     case "awarded":
@@ -40,7 +43,7 @@ function message(status: string, email: string) {
     case "not_selected":
       return "We regret that we are unable to offer you admission with the Access Scholarship this year. The Committee received many exceptional applications, and its decisions reflect the limited number of places rather than any shortcoming in your achievements. We encourage you to apply in a future cycle.";
     case "accepted":
-      return `Thank you for accepting your offer. Please complete the steps below before you report to campus in ${programme.arrival}. Your enrolment is confirmed in person at registration.`;
+      return `Thank you for accepting your offer. Please complete the steps below before you report to campus in ${programme.arrival}. Once the Office has verified your identification documents and arrival plan, you will be cleared to report, and your enrolment is confirmed in person at registration.`;
     case "declined_offer":
       return "You have declined your offer of admission. We wish you every success in your studies. If you declined in error, please contact the Office of Admissions without delay.";
     case "enrolled":
@@ -50,29 +53,18 @@ function message(status: string, email: string) {
   }
 }
 
-/** The allowances that make up this scholar's award, following the choices made in the application. */
-function awardLines(data: Record<string, string>) {
-  const offCampus = String(data.housing ?? "").startsWith("Off-campus");
-  const lines = [
-    { title: "Full tuition and required fees", amount: "Full cost", cadence: "eight semesters" },
-    offCampus
-      ? { title: allowanceBySlug("off-campus-housing")!.title, amount: "Up to $18,000", cadence: "per academic year, on submission of a lease" }
-      : { title: "University residence hall and dining plan", amount: "Full cost", cadence: "each academic year" },
-  ];
-  for (const slug of ["books", "living", "health", "settling-in", "travel"]) {
-    const a = allowanceBySlug(slug)!;
-    lines.push({ title: a.title, amount: a.amount, cadence: a.cadence });
-  }
-  if (data.laptop === "Yes") lines.push({ title: allowanceBySlug("laptop")!.title, amount: "$2,500", cadence: "one-time grant at matriculation" });
-  if (data.visa_needed === "Yes") lines.push({ title: allowanceBySlug("visa")!.title, amount: "Up to $800", cadence: "reimbursed on official receipts" });
-  return lines;
-}
-
 export default async function Portal() {
   const me = await requireApplicant("/portal");
   const app = await applicationFor(me.id);
   if (!app) redirect("/apply");
-  const [docs, events, requests] = await Promise.all([documentsFor(app.id), eventsFor(app.id), requestsFor(app.id)]);
+  const [allDocs, events, requests, letter] = await Promise.all([documentsFor(app.id), eventsFor(app.id), requestsFor(app.id), letterFor(app.id)]);
+  const docs = allDocs.filter((d) => !enrolKindSet.has(d.kind));
+  const idDocs = allDocs.filter((d) => enrolKindSet.has(d.kind));
+  const latestId = (kind: string) => [...idDocs].reverse().find((d) => d.kind === kind);
+  const idRequired = enrolmentDocs.filter((k) => k.required);
+  const idUploaded = idRequired.every((k) => latestId(k.kind) && latestId(k.kind)!.review !== "rejected");
+  const idVerified = idRequired.every((k) => latestId(k.kind)?.review === "verified");
+  const hasLetter = letterIsCurrent(letter);
   const p = progress(app.data, docs);
   const s = app.status;
   const draft = s === "draft";
@@ -90,13 +82,18 @@ export default async function Portal() {
   const rail = [
     { title: "Application started", done: true, now: draft, date: app.created_at },
     { title: "Application submitted", done: !draft, now: s === "submitted", date: app.submitted_at, hint: `Deadline ${programme.deadline}` },
-    { title: "Committee review", done: decisionDone || rank >= 2, now: s === "under_review", date: at("under_review"), hint: "Documents verified, recommender contacted" },
+    { title: "Committee review", done: decisionDone || rank >= 2, now: s === "under_review", date: at("under_review"), hint: "Academic documents verified" },
     { title: "Interview", done: decisionDone || rank >= 3, now: s === "interview", date: at("interview"), hint: `Shortlisted candidates, ${programme.interviews}` },
     { title: decisionDone ? statusLabels[["accepted", "declined_offer", "enrolled"].includes(s) ? "awarded" : s] : "Admission decision", done: decisionDone && s !== "awarded", now: s === "awarded" || s === "waitlisted" || s === "not_selected", date: at("awarded") ?? at(s), hint: `By ${programme.decisions}` },
     ...(admitted || s === "declined_offer"
       ? [
           { title: s === "declined_offer" ? "Offer declined" : "Offer accepted", done: s !== "awarded", now: s === "awarded", date: app.offer_reply_at as string | null, hint: `Reply by ${programme.replyBy}` },
-          ...(s === "declined_offer" ? [] : [{ title: "Reported to campus", done: s === "enrolled", now: s === "accepted", date: app.enrolled_at as string | null, hint: `Registration, ${programme.arrival}` }]),
+          ...(s === "declined_offer"
+            ? []
+            : [
+                { title: "Cleared to report", done: !!app.cleared_at, now: s === "accepted" && !app.cleared_at, date: app.cleared_at, hint: "Documents and arrival plan verified" },
+                { title: "Reported to campus", done: s === "enrolled", now: s === "accepted" && !!app.cleared_at, date: app.enrolled_at as string | null, hint: `Registration, ${programme.arrival}` },
+              ]),
         ]
       : []),
   ];
@@ -163,6 +160,12 @@ export default async function Portal() {
                   <p className={s === "awarded" ? "letter" : ""}>{message(s, me.email)}</p>
                   {s === "awarded" && <p className="letter-sign">The Scholarship Committee<br /><span className="muted small">{programme.office}</span></p>}
                 </div>
+                {hasLetter && (
+                  <div className="letterbar">
+                    <span>Your letter of admission, issued {fmtDate(letter!.issued_at)}. A copy was sent to {me.email}.</span>
+                    <a className="btn btn-primary btn-sm" href="/api/letter" target="_blank" rel="noopener">Download letter (PDF)</a>
+                  </div>
+                )}
               </section>
             )}
 
@@ -201,7 +204,18 @@ export default async function Portal() {
                     <b>Offer accepted</b>
                     <p>{fmtDate(app.offer_reply_at as string, true)}</p>
                   </li>
-                  <li className={arrival ? "done" : "now"}>
+                  <li className={idVerified ? "done" : "now"}>
+                    <b>Upload your identification documents</b>
+                    <p>
+                      {idVerified
+                        ? "Your documents have been verified by the Office."
+                        : idUploaded
+                          ? "Thank you. The Office is verifying your documents and will email you if anything needs replacing."
+                          : "Required for your student record, your identity card and your enrolment. Each file is checked by the Office."}
+                    </p>
+                    <div className="mt16"><EnrolmentDocs initial={idDocs} /></div>
+                  </li>
+                  <li className={arrival ? "done" : idUploaded ? "now" : ""}>
                     <b>Submit your arrival plan</b>
                     <p>Tell us when and how you will arrive so that we can meet you and prepare your room.</p>
                     <div className="mt16"><ArrivalForm initial={arrival as never} /></div>
@@ -215,11 +229,19 @@ export default async function Portal() {
                       ))}
                     </div>
                   </li>
-                  <li>
+                  <li className={app.cleared_at ? "done" : ""}>
+                    <b>{app.cleared_at ? "Cleared to report" : "Clearance to report"}</b>
+                    <p>
+                      {app.cleared_at
+                        ? `Confirmed ${fmtDate(app.cleared_at)}. Your documents and arrival plan are complete.`
+                        : "Given automatically once your documents are verified and your arrival plan is in. We will confirm it by email."}
+                    </p>
+                  </li>
+                  <li className={app.cleared_at ? "now" : ""}>
                     <b>Report to campus in person</b>
                     <p>
-                      Present yourself at registration in {programme.arrival} with your passport, a printed copy of this offer and your original academic certificates.
-                      Your enrolment, and the disbursement of your allowances, are confirmed in person by the Office of the Registrar and the Bursar.
+                      Present yourself at registration in {programme.arrival} with your passport, a printed copy of your letter of admission and your original academic
+                      certificates. Your enrolment, and the disbursement of your allowances, are confirmed in person by the Office of the Registrar and the Bursar.
                     </p>
                   </li>
                 </ol>

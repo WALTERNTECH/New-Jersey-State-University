@@ -49,6 +49,12 @@ export const actionLabels: Record<string, string> = {
   allowance_declined: "declined an allowance for",
   allowance_disbursed: "recorded an allowance disbursement for",
   applicant_reset: "issued a temporary password to",
+  document_verified: "verified a document of",
+  document_rejected: "asked for a replacement document from",
+  cleared: "cleared to report",
+  view_letter: "opened the letter of admission of",
+  letter_sent: "emailed the letter of admission to",
+  emails_resent: "resent emails",
 };
 
 export function Bars({ rows }: { rows: { label: string; n: number }[] }) {

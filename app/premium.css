@@ -194,3 +194,15 @@
   .authx-side ul { display: none; }
   .authx-main { padding: 28px 16px 56px; }
 }
+
+/* ================= Identification documents and letters ================= */
+.rv { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-left: 8px; vertical-align: 2px; background: var(--gold-wash); color: #6b5200; }
+.rv.verified { background: var(--ok-wash); color: var(--ok); }
+.rv.rejected { background: var(--err-wash); color: var(--err); }
+.rv-note { display: block; font-size: 13.5px; color: var(--err); margin-top: 4px; }
+.doc.bad { border-style: solid; border-color: #f6c9c4; background: #fffafa; }
+.verify-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end; }
+@media (max-width: 720px) { .verify-form { grid-template-columns: 1fr; } }
+.verify-ok { border-color: #bfe3cf; box-shadow: 0 0 0 4px var(--ok-wash); }
+.letterbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 16px 24px; border-top: 1px solid var(--line); background: #fbfcfe; border-radius: 0 0 14px 14px; }
+.letterbar span { flex: 1; min-width: 200px; font-size: 14px; color: var(--ink-2); }

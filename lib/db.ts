@@ -166,7 +166,7 @@ create table if not exists scores (
   academic int not null check (academic between 1 and 5),
   need int not null check (need between 1 and 5),
   essays int not null check (essays between 1 and 5),
-  recommendation int not null check (recommendation between 1 and 5),
+  potential int not null check (potential between 1 and 5),
   comment text,
   updated_at timestamptz not null default now(),
   primary key (application_id, staff_id)
@@ -220,6 +220,59 @@ create index if not exists allowance_files_request on allowance_files(request_id
 alter table allowance_requests enable row level security;
 alter table allowance_files enable row level security;
 create index if not exists applications_status on applications(status);
+
+-- Recommendations are no longer collected: the fourth score is character and potential
+do $$ begin
+  if exists (select 1 from information_schema.columns where table_schema = current_schema() and table_name = 'scores' and column_name = 'recommendation') then
+    alter table scores rename column recommendation to potential;
+  end if;
+end $$;
+
+-- Identification documents are collected after an offer is accepted, and verified by the Office
+alter table documents add column if not exists review text not null default 'pending';
+alter table documents add column if not exists review_note text;
+alter table documents add column if not exists reviewed_by uuid references staff(id);
+alter table documents add column if not exists reviewed_at timestamptz;
+alter table applications add column if not exists cleared_at timestamptz;
+
+-- Letters of admission: one per admitted candidate, verifiable by reference and code
+create table if not exists letters (
+  application_id uuid primary key references applications(id) on delete cascade,
+  code text not null,
+  issued_at timestamptz not null default now(),
+  revoked_at timestamptz
+);
+
+-- Every email the portal sends, so the Office can see what went out and resend it
+create table if not exists emails (
+  id uuid primary key default gen_random_uuid(),
+  applicant_id uuid references applicants(id) on delete cascade,
+  to_email text not null,
+  kind text not null,
+  subject text not null,
+  params jsonb not null default '{}'::jsonb,
+  status text not null default 'queued' check (status in ('queued', 'sent', 'failed', 'skipped')),
+  provider_id text,
+  error text,
+  attempts int not null default 0,
+  created_at timestamptz not null default now(),
+  sent_at timestamptz
+);
+create index if not exists emails_created on emails(created_at desc);
+create index if not exists emails_applicant on emails(applicant_id);
+
+-- Self-service password reset links
+create table if not exists password_resets (
+  token_hash text primary key,
+  applicant_id uuid not null references applicants(id) on delete cascade,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists password_resets_applicant on password_resets(applicant_id);
+alter table letters enable row level security;
+alter table emails enable row level security;
+alter table password_resets enable row level security;
 alter table staff enable row level security;
 alter table staff_sessions enable row level security;
 alter table notes enable row level security;

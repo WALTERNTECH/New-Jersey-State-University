@@ -5,7 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/client";
 import { programme } from "@/lib/content";
 
-export default function SignInForm({ next }: { next: string }) {
+export default function SignInForm({ next, emailReset }: { next: string; emailReset: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -46,9 +46,13 @@ export default function SignInForm({ next }: { next: string }) {
         <div className="field">
           <div className="flex" style={{ justifyContent: "space-between" }}>
             <label htmlFor="pw">Password</label>
-            <button type="button" className="textlink small" onClick={() => setForgot((v) => !v)} aria-expanded={forgot}>
-              Forgotten your password?
-            </button>
+            {emailReset ? (
+              <Link className="small" href="/forgot">Forgotten your password?</Link>
+            ) : (
+              <button type="button" className="textlink small" onClick={() => setForgot((v) => !v)} aria-expanded={forgot}>
+                Forgotten your password?
+              </button>
+            )}
           </div>
           <div className="pw">
             <input

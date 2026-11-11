@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { badOrigin, currentApplicant, fail } from "@/lib/auth";
+import { maybeClear } from "@/lib/stages";
 
 const Body = z.object({
   arrival_date: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "date"),
@@ -26,5 +27,6 @@ export async function POST(req: Request) {
     [me.id, JSON.stringify({ ...parsed.data, saved_at: new Date().toISOString() })],
   );
   if (!rows[0]) return fail(409, "Arrival plans can be submitted once you have accepted your offer, and until you have enrolled");
-  return NextResponse.json({ ok: true });
+  const cleared = await maybeClear(rows[0].id);
+  return NextResponse.json({ ok: true, cleared });
 }

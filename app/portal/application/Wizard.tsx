@@ -396,7 +396,7 @@ export default function Wizard({ initial, initialDocs, email, reference, firstSt
                   </label>
                   <label className="check">
                     <input type="checkbox" checked={decl.consent} onChange={(e) => setDecl((d) => ({ ...d, consent: e.target.checked }))} />
-                    <span>I agree that the scholarship office may verify my documents with the issuing schools and authorities, and contact my recommender.</span>
+                    <span>I agree that the scholarship office may verify my documents with the issuing schools and authorities.</span>
                   </label>
                   {!ready && (
                     <div className="alert alert-info" role="status">

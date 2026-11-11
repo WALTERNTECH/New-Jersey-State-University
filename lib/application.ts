@@ -12,6 +12,7 @@ export interface AppRow {
   offer_reply_at: string | null;
   arrival: Record<string, string> | null;
   enrolled_at: string | null;
+  cleared_at: string | null;
   updated_at: string;
   created_at: string;
   [k: string]: unknown;
@@ -24,13 +25,15 @@ export interface DocRow {
   mime: string;
   size: number;
   created_at: string;
+  review: string;
+  review_note: string | null;
   [k: string]: unknown;
 }
 
 export async function applicationFor(applicantId: string): Promise<AppRow | null> {
   const q = await db();
   const { rows } = await q.query<AppRow>(
-    "select id, reference, cycle, status, data, submitted_at, updated_at, created_at, offer_reply_at, arrival, enrolled_at from applications where applicant_id = $1",
+    "select id, reference, cycle, status, data, submitted_at, updated_at, created_at, offer_reply_at, arrival, enrolled_at, cleared_at from applications where applicant_id = $1",
     [applicantId],
   );
   return rows[0] ?? null;
@@ -39,7 +42,7 @@ export async function applicationFor(applicantId: string): Promise<AppRow | null
 export async function documentsFor(applicationId: string): Promise<DocRow[]> {
   const q = await db();
   const { rows } = await q.query<DocRow>(
-    "select id, kind, filename, mime, size, created_at from documents where application_id = $1 order by created_at",
+    "select id, kind, filename, mime, size, created_at, review, review_note from documents where application_id = $1 order by created_at",
     [applicationId],
   );
   return rows;

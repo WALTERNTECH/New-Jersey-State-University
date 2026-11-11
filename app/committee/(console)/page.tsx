@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { canDecide, requireStaffPage } from "@/lib/staff";
 import { statusCounts } from "@/lib/committee";
 import { programme } from "@/lib/content";
+import { emailConfigured } from "@/lib/email";
 import { statusLabels } from "@/lib/form";
 import { actionLabels, Bars, statusColors, when } from "@/components/committee/bits";
 
@@ -47,8 +48,12 @@ export default async function Dashboard() {
     ...(canDecide(me)
       ? [{ n: c.interview, title: "Interviewed, awaiting decision", sub: "Ready for the chair to decide", href: "/committee/applications?status=interview" }]
       : [{ n: c.interview, title: "At interview", sub: "Shortlisted applicants", href: "/committee/applications?status=interview" }]),
+    { n: c.docs_pending, title: "Identification documents to verify", sub: "From scholars who accepted their offer", href: "/committee/arrivals?view=documents" },
     { n: c.allowances_pending, title: "Allowance requests to decide", sub: "From admitted and enrolled scholars", href: "/committee/allowances?status=submitted" },
-    { n: c.accepted, title: "Scholars due to report", sub: "Offer accepted, not yet enrolled", href: "/committee/arrivals" },
+    { n: c.accepted, title: "Scholars due to report", sub: "Offer accepted, not yet enrolled", href: "/committee/arrivals?view=accepted" },
+    ...(canDecide(me) && c.emails_unsent > 0
+      ? [{ n: c.emails_unsent, title: "Emails not delivered", sub: emailConfigured() ? "Failed to send; resend from the log" : "Email is not set up yet", href: "/committee/emails?view=unsent" }]
+      : []),
   ];
 
   return (

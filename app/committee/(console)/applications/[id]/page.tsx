@@ -3,14 +3,18 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { canDecide, requireStaffPage, roleLabels, type Role } from "@/lib/staff";
 import { fullName, nextStatuses, scoreCriteria } from "@/lib/committee";
-import { documentKinds, statusLabels, steps, wordCount } from "@/lib/form";
+import { docLabel, documentKinds, enrolKindSet, enrolmentDocs, reviewLabels, statusLabels, steps, wordCount } from "@/lib/form";
 import { fmtDate, fmtSize } from "@/lib/client";
 import { StatusChip, when } from "@/components/committee/bits";
 import { NoteForm, ResetApplicantPassword, ScoreForm, StatusControl } from "@/components/committee/Actions";
 import { allowanceBySlug } from "@/lib/content";
 import { requestStatusLabels } from "@/lib/allowances";
+import { letterFor, letterIsCurrent } from "@/lib/letter";
+import { emailKindLabels } from "@/lib/email-templates";
+import { DocReview, ResendLetter } from "@/components/committee/Workflow";
 
 export const metadata = { title: "Application" };
+const mailLabels: Record<string, string> = { sent: "Sent", skipped: "Not sent", failed: "Failed", queued: "Sending" };
 export const dynamic = "force-dynamic";
 
 const eligibilityText: Record<string, Record<string, string>> = {
@@ -28,16 +32,19 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
   const { rows } = await q.query<{
     id: string; reference: string; status: string; data: Record<string, string>; eligibility: Record<string, string>;
     submitted_at: string | null; created_at: string; updated_at: string; email: string;
-    arrival: Record<string, string> | null; offer_reply_at: string | null; enrolled_at: string | null;
+    arrival: Record<string, string> | null; offer_reply_at: string | null; enrolled_at: string | null; cleared_at: string | null;
   }>(
-    "select a.id, a.reference, a.status, a.data, a.eligibility, a.submitted_at, a.created_at, a.updated_at, a.arrival, a.offer_reply_at, a.enrolled_at, p.email from applications a join applicants p on p.id = a.applicant_id where a.id = $1",
+    "select a.id, a.reference, a.status, a.data, a.eligibility, a.submitted_at, a.created_at, a.updated_at, a.arrival, a.offer_reply_at, a.enrolled_at, a.cleared_at, p.email from applications a join applicants p on p.id = a.applicant_id where a.id = $1",
     [id],
   );
   const app = rows[0];
   if (!app) notFound();
 
-  const [docs, events, notes, scores, lastView, reqs] = await Promise.all([
-    q.query<{ id: string; kind: string; filename: string; size: number; created_at: string }>("select id, kind, filename, size, created_at from documents where application_id = $1 order by created_at", [id]),
+  const [allDocs, events, notes, scores, lastView, reqs, letter, mail] = await Promise.all([
+    q.query<{ id: string; kind: string; filename: string; size: number; created_at: string; review: string; review_note: string | null; reviewer: string | null; reviewed_at: string | null }>(
+      "select d.id, d.kind, d.filename, d.size, d.created_at, d.review, d.review_note, d.reviewed_at, s.name as reviewer from documents d left join staff s on s.id = d.reviewed_by where d.application_id = $1 order by d.created_at",
+      [id],
+    ),
     q.query<{ status: string; note: string | null; created_at: string; name: string | null }>(
       "select e.status, e.note, e.created_at, s.name from status_events e left join staff s on s.id = e.staff_id where e.application_id = $1 order by e.created_at desc",
       [id],
@@ -46,8 +53,8 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
       "select n.id, n.body, n.created_at, s.name, s.role from notes n join staff s on s.id = n.staff_id where n.application_id = $1 order by n.created_at desc",
       [id],
     ),
-    q.query<{ staff_id: string; name: string; academic: number; need: number; essays: number; recommendation: number; comment: string | null; updated_at: string }>(
-      "select sc.staff_id, s.name, sc.academic, sc.need, sc.essays, sc.recommendation, sc.comment, sc.updated_at from scores sc join staff s on s.id = sc.staff_id where sc.application_id = $1 order by sc.updated_at",
+    q.query<{ staff_id: string; name: string; academic: number; need: number; essays: number; potential: number; comment: string | null; updated_at: string }>(
+      "select sc.staff_id, s.name, sc.academic, sc.need, sc.essays, sc.potential, sc.comment, sc.updated_at from scores sc join staff s on s.id = sc.staff_id where sc.application_id = $1 order by sc.updated_at",
       [id],
     ),
     q.query("select 1 from audit where staff_id = $1 and action = 'view_application' and target = $2 and created_at > now() - interval '15 minutes'", [me.id, app.reference]),
@@ -55,12 +62,23 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
       "select id, slug, status, submitted_at from allowance_requests where application_id = $1 and status <> 'draft' order by submitted_at desc",
       [id],
     ),
+    letterFor(id),
+    q.query<{ id: string; kind: string; subject: string; status: string; created_at: string; error: string | null }>(
+      "select e.id, e.kind, e.subject, e.status, e.created_at, e.error from emails e join applications a on a.applicant_id = e.applicant_id where a.id = $1 order by e.created_at desc limit 12",
+      [id],
+    ),
   ]);
+  const docs = { rows: allDocs.rows.filter((x) => !enrolKindSet.has(x.kind)) };
+  const idDocs = allDocs.rows.filter((x) => enrolKindSet.has(x.kind));
+  const latestId = (kind: string) => [...idDocs].reverse().find((x) => x.kind === kind);
+  const showId = ["accepted", "enrolled"].includes(app.status) || idDocs.length > 0;
+  const hasLetter = letterIsCurrent(letter);
+  const extraDocs = docs.rows.filter((x) => !documentKinds.some((k) => k.kind === x.kind));
   if (!lastView.rows.length) await q.query("insert into audit (staff_id, action, target) values ($1, 'view_application', $2)", [me.id, app.reference]);
 
   const d = app.data;
   const mine = scores.rows.find((s) => s.staff_id === me.id);
-  const totals = scores.rows.map((s) => s.academic + s.need + s.essays + s.recommendation);
+  const totals = scores.rows.map((s) => s.academic + s.need + s.essays + s.potential);
   const avg = totals.length ? (totals.reduce((a, b) => a + b, 0) / totals.length).toFixed(1) : null;
   const crit = (k: (typeof scoreCriteria)[number]["key"]) => (scores.rows.length ? (scores.rows.reduce((a, s) => a + s[k], 0) / scores.rows.length).toFixed(1) : "–");
   const draft = app.status === "draft";
@@ -130,6 +148,68 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
             </section>
           )}
 
+          {letter && (
+            <section className="c-card">
+              <div className="c-card-h">
+                <h2>Letter of admission</h2>
+                <span className="muted">{hasLetter ? `Issued ${fmtDate(letter.issued_at)}` : "Withdrawn"}</span>
+              </div>
+              <div className="c-card-b flex" style={{ justifyContent: "space-between" }}>
+                <span className="small muted" style={{ flex: 1, minWidth: 220 }}>
+                  {hasLetter
+                    ? `Emailed to the candidate automatically when admitted. Verification code ${letter.code}.`
+                    : "This letter was withdrawn when the decision changed or the offer was declined. It no longer verifies."}
+                </span>
+                {hasLetter && (
+                  <span className="flex">
+                    <a className="btn btn-ghost btn-sm" href={`/api/committee/applications/${app.id}/letter`} target="_blank" rel="noopener">Open PDF</a>
+                    {canDecide(me) && <ResendLetter id={app.id} />}
+                  </span>
+                )}
+              </div>
+            </section>
+          )}
+
+          {showId && (
+            <section className="c-card">
+              <div className="c-card-h">
+                <h2>Identification documents</h2>
+                <span className="muted">{app.cleared_at ? `Cleared to report ${fmtDate(app.cleared_at)}` : "Verify each file; clearance follows automatically"}</span>
+              </div>
+              {enrolmentDocs.map((k) => {
+                const doc = latestId(k.kind);
+                return (
+                  <div className="c-doc" key={k.kind} style={{ flexWrap: "wrap" }}>
+                    <div className="k">
+                      <b>
+                        {k.label}
+                        {!k.required && <span className="muted" style={{ fontWeight: 400 }}> · optional</span>}
+                      </b>
+                      <span>{doc ? `${doc.filename} · ${fmtSize(doc.size)} · uploaded ${when(doc.created_at)}` : k.required ? "Not uploaded yet" : "Not provided"}</span>
+                      {doc && (
+                        <span className={`c-rv ${doc.review}`}>
+                          {doc.review === "rejected" ? "Replacement requested" : reviewLabels[doc.review]}
+                          {doc.reviewer ? ` by ${doc.reviewer}` : ""}
+                          {doc.review === "rejected" && doc.review_note ? `: ${doc.review_note}` : ""}
+                        </span>
+                      )}
+                    </div>
+                    {doc && (
+                      <span className="flex">
+                        <a className="btn btn-ghost btn-sm" href={`/api/committee/documents/${doc.id}`} target="_blank" rel="noopener">Open</a>
+                        {doc.review === "pending" && app.status === "accepted" && canDecide(me) && <DocReview id={doc.id} label={k.label} />}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              <p className="c-card-b small muted" style={{ borderTop: "1px solid var(--line)" }}>
+                Arrival plan {app.arrival ? "received" : "not yet submitted"}. The scholar is cleared to report, and emailed, as soon as the required documents are verified and
+                the arrival plan is in.
+              </p>
+            </section>
+          )}
+
           <section className="c-card">
             <div className="c-card-h">
               <h2>At a glance</h2>
@@ -193,6 +273,15 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
                 </div>
               );
             })}
+            {extraDocs.map((doc) => (
+              <div className="c-doc" key={doc.id}>
+                <div className="k">
+                  <b>{docLabel(doc.kind)}</b>
+                  <span>{doc.filename} · {fmtSize(doc.size)} · uploaded {when(doc.created_at)}</span>
+                </div>
+                <a className="btn btn-ghost btn-sm" href={`/api/committee/documents/${doc.id}`} target="_blank" rel="noopener">Open</a>
+              </div>
+            ))}
           </section>
 
           {steps.filter((s) => s.id !== "essays").map((s) => (
@@ -202,7 +291,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
                 {s.fields.filter((f) => f.name !== "circumstances").map((f) => (
                   <div key={f.name} style={{ display: "contents" }}>
                     <dt>{f.label}</dt>
-                    <dd>{f.name === "rec_email" && d[f.name] ? <a href={`mailto:${d[f.name]}`}>{d[f.name]}</a> : d[f.name] || <span className="muted">—</span>}</dd>
+                    <dd>{d[f.name] || <span className="muted">—</span>}</dd>
                   </div>
                 ))}
               </dl>
@@ -236,7 +325,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
                     <li key={s.staff_id} style={{ display: "block" }}>
                       <span className="flex" style={{ justifyContent: "space-between" }}>
                         <b>{s.name}{s.staff_id === me.id ? " (you)" : ""}</b>
-                        <span>{s.academic + s.need + s.essays + s.recommendation}/20</span>
+                        <span>{s.academic + s.need + s.essays + s.potential}/20</span>
                       </span>
                       {s.comment && <span className="small muted" style={{ display: "block", marginTop: 4, whiteSpace: "pre-wrap" }}>{s.comment}</span>}
                     </li>
@@ -249,7 +338,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
           <section className="c-card">
             <div className="c-card-h"><h2>{mine ? "Your score" : "Score this application"}</h2></div>
             <div className="c-card-b">
-              <ScoreForm id={app.id} open={["under_review", "interview"].includes(app.status)} initial={mine ?? {}} />
+              <ScoreForm id={app.id} open={["submitted", "under_review", "interview"].includes(app.status)} opensReview={app.status === "submitted"} initial={mine ?? {}} />
             </div>
           </section>
 
@@ -276,11 +365,33 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
               {events.rows.map((e, i) => (
                 <li key={i}>
                   <b>{statusLabels[e.status] ?? e.status}</b>
-                  <span>{fmtDate(e.created_at, true)}{e.name ? ` · ${e.name}` : " · Applicant"}</span>
+                  <span>{fmtDate(e.created_at, true)}{e.name ? ` · ${e.name}` : e.status === "cleared" ? " · Automatic" : " · Applicant"}</span>
                   {e.note && <em>{e.note}</em>}
                 </li>
               ))}
             </ol>
+          </section>
+
+          <section className="c-card">
+            <div className="c-card-h">
+              <h2>Emails</h2>
+              <Link className="small" href={`/committee/emails?q=${encodeURIComponent(app.email)}`}>Email log</Link>
+            </div>
+            {mail.rows.length ? (
+              <ul className="c-others c-card-b">
+                {mail.rows.map((m) => (
+                  <li key={m.id}>
+                    <span>
+                      {emailKindLabels[m.kind] ?? m.kind}
+                      <span className="small muted" style={{ display: "block" }}>{when(m.created_at)}</span>
+                    </span>
+                    <span className={`c-mail ${m.status}`} title={m.error ?? undefined}>{mailLabels[m.status] ?? m.status}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="c-empty">No emails yet</p>
+            )}
           </section>
         </aside>
       </div>

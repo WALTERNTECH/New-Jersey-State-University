@@ -157,36 +157,37 @@ export const steps: Step[] = [
       { name: "essay_challenge", label: "Tell us about a challenge you have faced and what it taught you.", type: "textarea", required: true, minWords: 100, maxWords: 400 },
     ],
   },
-  {
-    id: "recommender",
-    title: "Recommender",
-    short: "Recommender",
-    intro: "Nominate one person who knows you well, such as a teacher, principal, employer or community leader. The Office of Admissions will request the recommendation directly once you submit; you need not obtain a letter yourself.",
-    fields: [
-      { name: "rec_name", label: "Their full name", type: "text", required: true, half: true, maxLength: 120 },
-      { name: "rec_email", label: "Their email", type: "email", required: true, half: true, maxLength: 160 },
-      { name: "rec_role", label: "Their position", type: "text", required: true, half: true, maxLength: 120, placeholder: "e.g. Mathematics teacher" },
-      {
-        name: "rec_relationship",
-        label: "How they know you",
-        type: "select",
-        required: true,
-        half: true,
-        options: ["Teacher", "Principal or head teacher", "Employer or supervisor", "Community or faith leader", "Coach or mentor", "Other"],
-      },
-    ],
-  },
 ];
 
+/** Documents submitted with the application. Identification is requested only after an offer is accepted. */
 export const documentKinds = [
-  { kind: "identity", label: "Identity document", hint: "Passport, national ID card or birth certificate.", required: true },
   { kind: "transcript", label: "Academic transcript or certificate", hint: "Your most recent results slip, transcript or school leaving certificate.", required: true },
   { kind: "income", label: "Proof of household income", hint: "A letter from a local official, a payslip or a benefits letter. Can follow within 14 days.", required: false },
   { kind: "english", label: "English evidence", hint: "A test score report, or a school letter confirming English instruction.", required: false },
 ] as const;
 
+/** Identification and enrolment documents, requested from admitted scholars once they accept, and verified by the Office. */
+export const enrolmentDocs = [
+  {
+    kind: "passport",
+    label: "Passport biographical page",
+    hint: "The page with your photograph and details. If your passport has not been issued yet, upload your national identity card and replace it later.",
+    required: true,
+  },
+  { kind: "photo", label: "Passport-style photograph", hint: "A recent colour photograph against a plain, light background, used for your student identity card.", required: true },
+  { kind: "immunisation", label: "Immunisation record", hint: "Your vaccination card or a doctor's certificate. New Jersey requires proof of certain immunisations for enrolment.", required: true },
+  { kind: "certificate", label: "Final school certificate", hint: "Only if your final results or leaving certificate were issued after you applied.", required: false },
+] as const;
+
 export type DocKind = (typeof documentKinds)[number]["kind"];
 export const docKindSet = new Set<string>(documentKinds.map((d) => d.kind));
+export const enrolKindSet = new Set<string>(enrolmentDocs.map((d) => d.kind));
+
+const legacyDocLabels: Record<string, string> = { identity: "Identity document (submitted with the application)" };
+export const docLabel = (kind: string) =>
+  [...documentKinds, ...enrolmentDocs].find((d) => d.kind === kind)?.label ?? legacyDocLabels[kind] ?? kind;
+
+export const reviewLabels: Record<string, string> = { pending: "Awaiting verification", verified: "Verified", rejected: "Needs replacing" };
 
 export const allSteps = [...steps.map((s) => ({ id: s.id, short: s.short })), { id: "documents", short: "Documents" }, { id: "review", short: "Review" }];
 
@@ -246,6 +247,8 @@ export const statusLabels: Record<string, string> = {
   accepted: "Offer accepted",
   declined_offer: "Offer declined",
   enrolled: "Enrolled",
+  // Not a stage of its own: recorded in the history when documents and arrival plan are complete.
+  cleared: "Cleared to report",
 };
 
 /** Admitted scholars who have accepted their offer, and those who have reported to campus. */

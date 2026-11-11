@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/Chrome";
 import AuthSide from "@/components/AuthSide";
 import { currentApplicant } from "@/lib/auth";
 import { programme } from "@/lib/content";
+import { emailConfigured } from "@/lib/email";
 import SignInForm from "./SignInForm";
 
 export const metadata = { title: "Sign in" };
@@ -25,7 +26,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
           points={["Your progress is saved automatically", "Follow each stage of the review", "Reply to your offer and request allowances"]}
         />
         <div className="authx-main">
-          <SignInForm next={next} />
+          <SignInForm next={next} emailReset={emailConfigured()} />
         </div>
       </main>
     </>

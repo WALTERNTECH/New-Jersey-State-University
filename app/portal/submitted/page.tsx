@@ -66,9 +66,10 @@ export default async function Submitted() {
               )}
               <li>
                 <div>
-                  <b>Verification and recommendation</b>
+                  <b>Committee review</b>
                   <p>
-                    The Office of Admissions will verify your documents and write to {app.data.rec_name || "your recommender"} directly. Your status will change to “Under review” when this begins.
+                    The Scholarship Committee will review your application and verify your academic documents. Your status will change to “Under review” when this
+                    begins, and we will confirm it by email.
                   </p>
                   <p className="when">Within 3 weeks of the deadline</p>
                 </div>
@@ -83,7 +84,7 @@ export default async function Submitted() {
               <li>
                 <div>
                   <b>Admission decision</b>
-                  <p>Decisions are released in the applicant portal and sent to {me.email}. Admitted scholars receive their offer, the terms of their award and guidance on enrolment and travel.</p>
+                  <p>Decisions are released in the applicant portal and sent to {me.email}. Admitted scholars receive their letter of admission by email, with the terms of their award and guidance on enrolment and travel.</p>
                   <p className="when">By {programme.decisions}</p>
                 </div>
               </li>

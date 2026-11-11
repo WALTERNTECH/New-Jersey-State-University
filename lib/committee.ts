@@ -26,8 +26,11 @@ export const scoreCriteria = [
   { key: "academic", label: "Academic promise" },
   { key: "need", label: "Financial need" },
   { key: "essays", label: "Essays" },
-  { key: "recommendation", label: "Recommendation" },
+  { key: "potential", label: "Character and potential" },
 ] as const;
+
+/** SQL for an application's average score out of 20. */
+export const AVG_SCORE_SQL = "(select round(avg(s.academic + s.need + s.essays + s.potential)::numeric, 1) from scores s where s.application_id = a.id)";
 
 export interface Counts {
   draft: number;
@@ -42,22 +45,33 @@ export interface Counts {
   enrolled: number;
   my_queue: number;
   allowances_pending: number;
+  docs_pending: number;
+  emails_unsent: number;
 }
+
+export const ENROL_KINDS_SQL = "('passport', 'photo', 'immunisation', 'certificate')";
 
 export async function statusCounts(staffId: string): Promise<Counts> {
   const q = await db();
-  const [{ rows }, mine, pending] = await Promise.all([
+  const [{ rows }, mine, pending, docs, emails] = await Promise.all([
     q.query<{ status: string; n: number }>("select status, count(*)::int as n from applications group by status"),
     q.query<{ n: number }>(
-      "select count(*)::int as n from applications a where a.status in ('under_review', 'interview') and not exists (select 1 from scores s where s.application_id = a.id and s.staff_id = $1)",
+      "select count(*)::int as n from applications a where a.status in ('submitted', 'under_review', 'interview') and not exists (select 1 from scores s where s.application_id = a.id and s.staff_id = $1)",
       [staffId],
     ),
     q.query<{ n: number }>("select count(*)::int as n from allowance_requests where status = 'submitted'"),
+    q.query<{ n: number }>(
+      `select count(distinct d.application_id)::int as n from documents d join applications a on a.id = d.application_id
+       where a.status = 'accepted' and d.kind in ${ENROL_KINDS_SQL} and d.review = 'pending'`,
+    ),
+    q.query<{ n: number }>("select count(*)::int as n from emails where status in ('failed', 'skipped') and kind <> 'password_reset'"),
   ]);
   const c = Object.fromEntries(STATUSES.map((s) => [s, 0])) as unknown as Counts;
   for (const r of rows) (c as unknown as Record<string, number>)[r.status] = Number(r.n);
   c.my_queue = Number(mine.rows[0].n);
   c.allowances_pending = Number(pending.rows[0].n);
+  c.docs_pending = Number(docs.rows[0].n);
+  c.emails_unsent = Number(emails.rows[0].n);
   return c;
 }
 

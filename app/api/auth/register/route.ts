@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { badOrigin, createSession, fail, newReference } from "@/lib/auth";
 import { programme } from "@/lib/content";
+import { sendEmail } from "@/lib/email";
 
 const Body = z.object({
   first_name: z.string().trim().min(1).max(80),
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
   if (exists.rows.length) return fail(409, "An application already exists for this email. Sign in to continue it.", { field: "email" });
 
   const hash = await bcrypt.hash(b.password, 10);
+  const reference = newReference(programme.cycleCode);
   const id = await q.tx(async (t) => {
     const a = await t.query<{ id: string }>(
       "insert into applicants (email, first_name, last_name, password_hash) values ($1, $2, $3, $4) returning id",
@@ -39,11 +41,12 @@ export async function POST(req: Request) {
     const applicantId = a.rows[0].id;
     const app = await t.query<{ id: string }>(
       "insert into applications (applicant_id, reference, cycle, eligibility, data) values ($1, $2, $3, $4, $5) returning id",
-      [applicantId, newReference(programme.cycleCode), programme.cycleCode, JSON.stringify(b.eligibility), JSON.stringify({ first_name: b.first_name, last_name: b.last_name })],
+      [applicantId, reference, programme.cycleCode, JSON.stringify(b.eligibility), JSON.stringify({ first_name: b.first_name, last_name: b.last_name })],
     );
     await t.query("insert into status_events (application_id, status, note) values ($1, 'draft', 'Application started')", [app.rows[0].id]);
     return applicantId;
   });
   await createSession(id);
+  await sendEmail({ kind: "welcome", to: b.email, applicantId: id, params: { name: b.first_name, reference } });
   return NextResponse.json({ ok: true });
 }

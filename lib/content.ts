@@ -72,19 +72,19 @@ export const faqs = [
   },
   {
     q: "Which documents are required?",
-    a: "A government-issued identity document and the most recent academic transcript or examination certificate. Evidence of household income and English proficiency strengthen an application and may be submitted up to 14 days after the deadline.",
+    a: "Only the most recent academic transcript or examination certificate. Evidence of household income and English proficiency strengthen an application and may be submitted up to 14 days after the deadline. Identification documents are requested only from admitted scholars, after they accept their offer.",
   },
   {
     q: "How are candidates evaluated?",
-    a: "The Scholarship Committee reviews each application holistically, considering academic preparation, financial circumstances, personal qualities expressed in the essays, and the recommendation.",
+    a: "The Scholarship Committee reviews each application holistically, considering academic preparation, financial circumstances and the personal qualities expressed in the essays.",
   },
   {
     q: "Must the application be completed in one sitting?",
     a: "No. The application saves automatically. Candidates may sign in from any device to continue where they left off.",
   },
   {
-    q: "Whom should I ask for a recommendation?",
-    a: "A teacher, principal, employer or community leader who knows you well. Provide their name and email; the Office of Admissions will contact them directly after you submit.",
+    q: "How will I hear about my application?",
+    a: "Every stage is shown in the applicant portal and confirmed by email. Admitted candidates receive their letter of admission by email and can download it from the portal at any time.",
   },
 ];
 

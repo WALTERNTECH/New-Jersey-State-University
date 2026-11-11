@@ -6,11 +6,11 @@ import { api } from "@/lib/client";
 import { statusLabels } from "@/lib/form";
 
 const explain: Record<string, string> = {
-  under_review: "Open the review. Committee members can score it.",
-  interview: "Shortlist for a 30-minute interview.",
-  awarded: "Award the scholarship. The applicant sees this in their portal.",
-  waitlisted: "Hold on the waitlist. The applicant sees this in their portal.",
-  not_selected: "Close the application. The applicant sees this in their portal.",
+  under_review: "Open the review. The applicant is emailed.",
+  interview: "Shortlist for a 30-minute interview. The applicant is emailed an invitation.",
+  awarded: "Admit with the scholarship. The letter of admission is emailed automatically.",
+  waitlisted: "Hold on the waitlist. The applicant is emailed.",
+  not_selected: "Close the application. The applicant is emailed the decision.",
   submitted: "Send back to the new pile.",
 };
 
@@ -99,20 +99,20 @@ const crit = [
   { key: "academic", label: "Academic promise", hint: "Grades and education so far, given their circumstances" },
   { key: "need", label: "Financial need", hint: "Household income, size and situation" },
   { key: "essays", label: "Essays", hint: "Clarity of purpose, reflection, their own voice" },
-  { key: "recommendation", label: "Recommendation", hint: "Use 3 if the reference hasn't arrived yet" },
+  { key: "potential", label: "Character and potential", hint: "Resilience, purpose and contribution, from the essays and any interview" },
 ] as const;
 type Key = (typeof crit)[number]["key"];
 
-export function ScoreForm({ id, initial, open }: { id: string; initial: Partial<Record<Key, number>> & { comment?: string | null }; open: boolean }) {
+export function ScoreForm({ id, initial, open, opensReview }: { id: string; initial: Partial<Record<Key, number>> & { comment?: string | null }; open: boolean; opensReview?: boolean }) {
   const router = useRouter();
-  const [v, setV] = useState<Partial<Record<Key, number>>>({ academic: initial.academic, need: initial.need, essays: initial.essays, recommendation: initial.recommendation });
+  const [v, setV] = useState<Partial<Record<Key, number>>>({ academic: initial.academic, need: initial.need, essays: initial.essays, potential: initial.potential });
   const [comment, setComment] = useState(initial.comment ?? "");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const complete = crit.every((c) => v[c.key]);
   const total = crit.reduce((a, c) => a + (v[c.key] ?? 0), 0);
 
-  if (!open) return <p className="small muted">Scoring opens when the application is under review.</p>;
+  if (!open) return <p className="small muted">Scoring is open while an application is new, under review or at interview.</p>;
 
   async function save() {
     setBusy(true);
@@ -158,6 +158,7 @@ export function ScoreForm({ id, initial, open }: { id: string; initial: Partial<
           {busy ? "Saving…" : initial.academic ? "Update score" : "Save score"}
         </button>
       </div>
+      {opensReview && !msg && <p className="small muted">Saving the first score moves this application to “Under review” and lets the applicant know.</p>}
       {msg && <div className={`alert ${msg.ok ? "alert-ok" : "alert-err"}`} role="status">{msg.text}</div>}
     </div>
   );

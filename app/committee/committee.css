@@ -276,3 +276,30 @@
 .c-code { letter-spacing: 0.4em; text-align: center; font-size: 22px !important; font-variant-numeric: tabular-nums; }
 .c-once { background: var(--gold-wash); border: 1px solid #f1e0a2; border-radius: 10px; padding: 14px 16px; }
 .c-once code { font: 700 16px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.05em; color: var(--navy); }
+
+/* ---------- Bulk selection, document review, email log ---------- */
+.c-pick { width: 36px; position: relative; z-index: 2; }
+.c-pick input { width: 17px; height: 17px; accent-color: var(--navy); cursor: pointer; }
+.c-bulk { position: sticky; top: 64px; z-index: 5; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--navy); color: #fff; border-radius: 10px; padding: 10px 16px; margin-bottom: 14px; box-shadow: 0 8px 24px rgba(6, 36, 60, 0.18); }
+.c-bulk b { font-weight: 600; }
+.c-bulk .err { color: #ffd2cc; }
+.c-bulk .c-x { color: #fff; margin-left: auto; }
+.c-rv { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: var(--gold-wash); color: #6b5200; }
+.c-rv.verified { background: var(--ok-wash); color: var(--ok); }
+.c-rv.rejected { background: var(--err-wash); color: var(--err); }
+.c-mail { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; background: #eef1f5; color: var(--ink-2); }
+.c-mail.sent { background: var(--ok-wash); color: var(--ok); }
+.c-mail.failed { background: var(--err-wash); color: var(--err); }
+.c-mail.skipped { background: var(--gold-wash); color: #6b5200; }
+.c-banner { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: space-between; padding: 14px 18px; border-radius: 10px; margin-bottom: 18px; background: var(--gold-wash); border: 1px solid #f1e0a2; color: #5c4700; font-size: 14px; }
+.c-banner.ok { background: var(--ok-wash); border-color: #bfe3cf; color: var(--ok); }
+@media (max-width: 760px) {
+  .c-table td.c-pick { position: absolute; right: 12px; top: 12px; width: auto; display: block; padding: 0; }
+  .c-table td.c-pick::before { display: none; }
+  .c-table td.c-pick + td { display: block; padding: 0 36px 6px 0; }
+  .c-table td.c-pick + td::before { display: none; }
+}
+/* Wide tables scroll sideways on mid-size screens instead of spilling out of their card. */
+@media (min-width: 761px) { .c-card:has(> .c-table) { overflow-x: auto; } }
+.c-bulk .btn-primary { background: var(--gold); border-color: var(--gold); color: var(--navy); }
+.c-bulk .btn-primary:hover { background: #f3c937; }
