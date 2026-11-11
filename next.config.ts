@@ -16,6 +16,10 @@ const csp = [
 const config: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["@electric-sql/pglite", "pg"],
+  async redirects() {
+    // One public address: www.njsu.study goes to njsu.study.
+    return [{ source: "/:path*", has: [{ type: "host", value: "www.njsu.study" }], destination: "https://njsu.study/:path*", permanent: true }];
+  },
   async headers() {
     return [
       {
