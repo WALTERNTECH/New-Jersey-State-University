@@ -45,6 +45,16 @@ export async function sendEmail(s: Send): Promise<string | null> {
   }
 }
 
+/** The Office's own inbox for alerts: OFFICE_EMAIL, or failing that the reply-to address. */
+export const officeEmail = () => process.env.OFFICE_EMAIL?.trim() || process.env.EMAIL_REPLY_TO?.trim() || "";
+
+/** Tells the Office about something that happened, in its own inbox. Does nothing if no office address is set. */
+export async function alertOffice(kind: EmailKind, params: Params) {
+  const to = officeEmail();
+  if (!to) return null;
+  return sendEmail({ kind, to, applicantId: null, params });
+}
+
 /** Sends a logged email again, for example once Resend has been connected. */
 export async function resend(id: string) {
   const q = await db();

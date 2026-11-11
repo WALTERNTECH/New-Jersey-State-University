@@ -13,7 +13,17 @@ export type EmailKind =
   | "cleared"
   | "enrolled"
   | "allowance"
-  | "password_reset";
+  | "password_reset"
+  | "office_signup"
+  | "office_submitted"
+  | "office_offer"
+  | "office_document"
+  | "office_arrival"
+  | "office_allowance"
+  | "office_cleared";
+
+/** Alerts to the Office's own inbox, as opposed to messages to applicants. */
+export const isOfficeKind = (k: string) => k.startsWith("office_");
 
 export const emailKindLabels: Record<string, string> = {
   welcome: "Account created",
@@ -27,6 +37,13 @@ export const emailKindLabels: Record<string, string> = {
   enrolled: "Enrolment confirmed",
   allowance: "Allowance decision",
   password_reset: "Password reset link",
+  office_signup: "Office alert: new account",
+  office_submitted: "Office alert: application submitted",
+  office_offer: "Office alert: offer reply",
+  office_document: "Office alert: document to verify",
+  office_arrival: "Office alert: arrival plan",
+  office_allowance: "Office alert: allowance request",
+  office_cleared: "Office alert: cleared to report",
 };
 
 export type Params = Record<string, string>;
@@ -217,6 +234,67 @@ function content(kind: string, p: Params): Content {
         button: { label: "Choose a new password", path: p.reset_path || "/forgot" },
         after: ["If you did not request this, you may ignore this email; your password will not change."],
       };
+    // ---- Alerts to the Office of Admissions
+    case "office_signup":
+      return {
+        subject: `[NJSU] New applicant account: ${p.name}`,
+        preheader: `${p.email} has started an application.`,
+        heading: "New applicant account",
+        paras: [`${p.name} (${p.email}) has created an account and started an application. Reference ${p.reference}.`, "No action is needed until the application is submitted."],
+        button: { label: "Applications in progress", path: "/committee/applications?status=draft" },
+      };
+    case "office_submitted":
+      return {
+        subject: `[NJSU] Application submitted: ${p.name} (${p.reference})`,
+        preheader: `${p.name} has submitted an application.`,
+        heading: "Application submitted",
+        paras: [`${p.name} has submitted application ${p.reference}.`, [p.residence, p.major].filter(Boolean).join(" · ")].filter(Boolean),
+        button: { label: "Open the application", path: `/committee/applications/${p.app_id}` },
+      };
+    case "office_offer":
+      return {
+        subject: `[NJSU] Offer ${p.decision === "accept" ? "accepted" : "declined"}: ${p.name} (${p.reference})`,
+        preheader: `${p.name} has replied to their offer.`,
+        heading: p.decision === "accept" ? "Offer accepted" : "Offer declined",
+        paras: [
+          p.decision === "accept"
+            ? `${p.name} has accepted their offer of admission. They will now upload their identification documents and arrival plan for verification.`
+            : `${p.name} has declined their offer of admission. Their place can be offered to a candidate on the waitlist.`,
+        ],
+        button: p.decision === "accept" ? { label: "Open the application", path: `/committee/applications/${p.app_id}` } : { label: "View the waitlist", path: "/committee/applications?status=decided" },
+      };
+    case "office_document":
+      return {
+        subject: `[NJSU] Document to verify: ${p.name} (${p.document})`,
+        preheader: `${p.name} uploaded their ${p.document}.`,
+        heading: "Document to verify",
+        paras: [`${p.name} (${p.reference}) has uploaded their ${p.document}. Please verify it, or ask for a replacement.`],
+        button: { label: "Verify the document", path: `/committee/applications/${p.app_id}` },
+      };
+    case "office_arrival":
+      return {
+        subject: `[NJSU] Arrival plan: ${p.name} (${p.reference})`,
+        preheader: `${p.name} expects to arrive ${p.date}.`,
+        heading: "Arrival plan received",
+        paras: [`${p.name} expects to arrive on ${p.date}${p.point ? ` at ${p.point}` : ""}.`],
+        button: { label: "Arrivals", path: "/committee/arrivals?view=accepted" },
+      };
+    case "office_allowance":
+      return {
+        subject: `[NJSU] Allowance request: ${p.allowance} for ${p.name}`,
+        preheader: `${p.name} has requested the ${p.allowance}.`,
+        heading: "Allowance request to decide",
+        paras: [`${p.name} (${p.reference}) has submitted a request for the ${p.allowance}.`],
+        button: { label: "Decide the request", path: `/committee/allowances/${p.request_id}` },
+      };
+    case "office_cleared":
+      return {
+        subject: `[NJSU] Cleared to report: ${p.name} (${p.reference})`,
+        preheader: `${p.name}'s documents and arrival plan are complete.`,
+        heading: "Scholar cleared to report",
+        paras: [`${p.name}'s identification documents are verified and their arrival plan is in, so they have been cleared to report and told by email. Confirm their enrolment when they arrive.`],
+        button: { label: "Arrivals", path: "/committee/arrivals?view=accepted" },
+      };
     default:
       return { subject: "A message from NJSU Admissions", preheader: "", heading: "A message from NJSU Admissions", paras: [] };
   }
@@ -225,6 +303,10 @@ function content(kind: string, p: Params): Content {
 export function renderEmail(kind: string, p: Params, site: string) {
   const c = content(kind, p);
   const url = c.button ? site + c.button.path : null;
+  const office = isOfficeKind(kind);
+  const foot = office
+    ? ["Alert from the NJSU Access Scholarship portal to the Office of Admissions.", "Sign in to the committee console to act on it."]
+    : [programme.office, programme.university, "We never charge applicants. Ignore any request for payment in our name."];
   const P = (s: string) => `<p style="margin:0 0 16px">${esc(s)}</p>`;
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(c.subject)}</title></head>
@@ -248,8 +330,7 @@ ${(c.after ?? []).map(P).join("\n")}
 ${url ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 22px"><tr><td style="background:#06243c;border-radius:6px"><a href="${esc(url)}" style="display:inline-block;padding:12px 22px;font:600 15px Arial,Helvetica,sans-serif;color:#ffffff;text-decoration:none">${esc(c.button!.label)}</a></td></tr></table>` : ""}
 </td></tr>
 <tr><td style="padding:18px 28px 24px;border-top:1px solid #eef1f5;font:12.5px/1.6 Arial,Helvetica,sans-serif;color:#6b7684">
-${esc(programme.office)}<br>${esc(programme.university)}<br>
-We never charge applicants. Ignore any request for payment in our name.
+${foot.map(esc).join("<br>\n")}
 </td></tr>
 </table>
 </td></tr></table>
@@ -263,9 +344,7 @@ We never charge applicants. Ignore any request for payment in our name.
     ...(c.after ?? []).flatMap((s) => [s, ""]),
     ...(url ? [`${c.button!.label}: ${url}`, ""] : []),
     "--",
-    programme.office,
-    programme.university,
-    "We never charge applicants. Ignore any request for payment in our name.",
+    ...foot,
   ].join("\n");
   return { subject: c.subject, html, text };
 }

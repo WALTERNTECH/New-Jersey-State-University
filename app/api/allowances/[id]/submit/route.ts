@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { badOrigin, currentApplicant, fail } from "@/lib/auth";
 import { applicationFor } from "@/lib/application";
 import { allowanceBySlug, canRequest, fieldErrors, requestsFor } from "@/lib/allowances";
+import { alertOffice } from "@/lib/email";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -28,6 +29,13 @@ export async function POST(req: Request, { params }: Ctx) {
   const have = new Set(files.rows.map((f) => f.doc_key));
   const missing = (a.documents ?? []).filter((d) => d.required && !have.has(d.key)).map((d) => d.label);
   if (missing.length) return fail(400, `Please attach: ${missing.join(", ")}`);
-  await q.query("update allowance_requests set status = 'submitted', submitted_at = now(), updated_at = now() where id = $1 and status = 'draft'", [id]);
+  const moved = await q.query("update allowance_requests set status = 'submitted', submitted_at = now(), updated_at = now() where id = $1 and status = 'draft' returning id", [id]);
+  if (moved.rows[0])
+    await alertOffice("office_allowance", {
+      name: [app.data.first_name, app.data.last_name].filter(Boolean).join(" ") || me.first_name,
+      reference: app.reference,
+      allowance: a.title,
+      request_id: id,
+    });
   return NextResponse.json({ ok: true });
 }

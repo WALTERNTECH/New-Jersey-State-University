@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { canDecide, requireStaffPage } from "@/lib/staff";
-import { emailConfigured } from "@/lib/email";
+import { emailConfigured, officeEmail } from "@/lib/email";
 import { emailKindLabels } from "@/lib/email-templates";
 import { when } from "@/components/committee/bits";
 import { ResendEmail } from "@/components/committee/Workflow";
@@ -55,7 +55,10 @@ export default async function Emails({ searchParams }: { searchParams: Promise<{
 
       {configured ? (
         <div className="c-banner ok">
-          <span>Email is connected. Messages are sent automatically at each stage.</span>
+          <span>
+            Email is connected. Applicants are emailed automatically at each stage
+            {officeEmail() ? `, and Office alerts go to ${officeEmail()}` : ". Set OFFICE_EMAIL to receive Office alerts"}.
+          </span>
           {unsent > 0 && <ResendEmail all />}
         </div>
       ) : (

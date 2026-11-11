@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { badOrigin, currentApplicant, fail, seal } from "@/lib/auth";
 import { applicationFor } from "@/lib/application";
-import { docKindSet, enrolKindSet } from "@/lib/form";
+import { docKindSet, docLabel, enrolKindSet } from "@/lib/form";
+import { alertOffice } from "@/lib/email";
 import { MAX_UPLOAD_BYTES, safeFilename, sniffMime } from "@/lib/files";
 
 /**
@@ -47,5 +48,12 @@ export async function POST(req: Request) {
     return r.rows[0];
   });
   if (!row) return fail(409, "This document has already been verified by the Office");
+  if (enrol)
+    await alertOffice("office_document", {
+      name: [app.data.first_name, app.data.last_name].filter(Boolean).join(" ") || me.first_name,
+      reference: app.reference,
+      app_id: app.id,
+      document: docLabel(kind).toLowerCase(),
+    });
   return NextResponse.json({ document: { id: row.id, kind, filename, mime, size: bytes.length, created_at: row.created_at, review: "pending", review_note: null } });
 }

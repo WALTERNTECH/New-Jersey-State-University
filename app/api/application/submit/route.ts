@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { badOrigin, currentApplicant, fail } from "@/lib/auth";
 import { applicationFor, documentsFor, progress } from "@/lib/application";
-import { sendEmail } from "@/lib/email";
+import { alertOffice, sendEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   if (badOrigin(req)) return fail(403, "Request blocked");
@@ -29,6 +29,13 @@ export async function POST(req: Request) {
   if (moved) {
     const name = (app.data.preferred_name || app.data.first_name || me.first_name).trim();
     await sendEmail({ kind: "submitted", to: me.email, applicantId: me.id, params: { name, reference: app.reference } });
+    await alertOffice("office_submitted", {
+      name: [app.data.first_name, app.data.last_name].filter(Boolean).join(" ") || name,
+      reference: app.reference,
+      app_id: app.id,
+      residence: app.data.residence ?? "",
+      major: app.data.major ?? "",
+    });
   }
   return NextResponse.json({ ok: true, reference: app.reference });
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { badOrigin, currentApplicant, fail } from "@/lib/auth";
 import { revokeLetter } from "@/lib/letter";
-import { sendEmail } from "@/lib/email";
+import { alertOffice, sendEmail } from "@/lib/email";
 
 /** The admitted candidate's reply to the offer of admission. Only possible while the offer stands. */
 export async function POST(req: Request) {
@@ -32,5 +32,11 @@ export async function POST(req: Request) {
   if (!done) return fail(409, "There is no open offer of admission on this account");
   const name = (done.data.preferred_name || done.data.first_name || me.first_name).trim();
   await sendEmail({ kind: to === "accepted" ? "offer_accepted" : "offer_declined", to: me.email, applicantId: me.id, params: { name, reference: done.reference } });
+  await alertOffice("office_offer", {
+    name: [done.data.first_name, done.data.last_name].filter(Boolean).join(" ") || name,
+    reference: done.reference,
+    app_id: done.id,
+    decision,
+  });
   return NextResponse.json({ ok: true, status: to });
 }

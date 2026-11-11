@@ -4,7 +4,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { badOrigin, createSession, fail, newReference } from "@/lib/auth";
 import { programme } from "@/lib/content";
-import { sendEmail } from "@/lib/email";
+import { alertOffice, sendEmail } from "@/lib/email";
 
 const Body = z.object({
   first_name: z.string().trim().min(1).max(80),
@@ -48,5 +48,6 @@ export async function POST(req: Request) {
   });
   await createSession(id);
   await sendEmail({ kind: "welcome", to: b.email, applicantId: id, params: { name: b.first_name, reference } });
+  await alertOffice("office_signup", { name: `${b.first_name} ${b.last_name}`, email: b.email, reference });
   return NextResponse.json({ ok: true });
 }

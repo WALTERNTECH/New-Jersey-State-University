@@ -4,7 +4,7 @@ import { audit } from "./staff";
 import { nextStatuses } from "./committee";
 import { enrolmentDocs, statusLabels } from "./form";
 import { issueLetter, revokeLetter } from "./letter";
-import { sendEmail } from "./email";
+import { alertOffice, sendEmail } from "./email";
 
 // Every stage change goes through here, so letters, emails and the activity log always follow automatically.
 
@@ -83,5 +83,6 @@ export async function maybeClear(appId: string): Promise<boolean> {
   await q.query("insert into status_events (application_id, status, note) values ($1, 'cleared', 'Identification documents verified and arrival plan received')", [appId]);
   await audit(null, "cleared", r.reference);
   await sendEmail({ kind: "cleared", to: r.email, applicantId: r.applicant_id, params: { name: nameOf(r), reference: r.reference } });
+  await alertOffice("office_cleared", { name: [r.data.first_name, r.data.last_name].filter(Boolean).join(" ") || nameOf(r), reference: r.reference });
   return true;
 }
