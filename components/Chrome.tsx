@@ -2,6 +2,7 @@ import Link from "next/link";
 import { programme } from "@/lib/content";
 import { currentApplicant } from "@/lib/auth";
 import SignOutButton from "./SignOutButton";
+import CookieSettingsLink from "./CookieSettingsLink";
 
 export function Brand({ sub = "Admissions and Financial Aid", light = false }: { sub?: string; light?: boolean }) {
   return (
@@ -112,6 +113,10 @@ export function SiteFooter() {
         </div>
         <div className="bottom">
           <span>© {year} {programme.university}</span>
+          <span className="footlinks">
+            <Link href="/cookies">Cookies</Link>
+            <CookieSettingsLink className="footlink">Cookie settings</CookieSettingsLink>
+          </span>
           <span className="notice">We never charge applicants or ask for a PIN, password or card number.</span>
         </div>
       </div>
