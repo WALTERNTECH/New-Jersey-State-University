@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { allowanceBySlug, canRequest, requestsFor, requestStatusLabels } from "@/lib/allowances";
 import { phaseLabels } from "@/lib/content";
 import { fmtDate } from "@/lib/client";
+import { masked, paymentSummary } from "@/lib/payment";
 
 export const metadata = { title: "Allowance request", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default async function AllowanceRequestPage({ params }: { params: Promise
   const me = await requireApplicant(`/portal/allowances/${slug}`);
   const app = await applicationFor(me.id);
   if (!app) redirect("/apply");
-  const reqs = await requestsFor(app.id);
+  const [reqs, pay] = await Promise.all([requestsFor(app.id), paymentSummary(app.id)]);
   const mine = reqs.filter((r) => r.slug === slug && r.status !== "draft");
   const draft = reqs.find((r) => r.slug === slug && r.status === "draft");
   const allowed = canRequest(a, app.status, app.data, reqs.filter((r) => r.status !== "draft"));
@@ -36,8 +37,8 @@ export default async function AllowanceRequestPage({ params }: { params: Promise
         <div className="portalbar">
           <div className="wrap">
             <div>
-              <span className="eyebrow">{phaseLabels[a.phase].label}</span>
-              <h1 className="mt8">{a.title}</h1>
+              <span className="kicker">{phaseLabels[a.phase].label}</span>
+              <h1>{a.title}</h1>
             </div>
             <Link className="btn btn-ghost btn-sm" href="/portal/allowances">All allowances</Link>
           </div>
@@ -89,7 +90,7 @@ export default async function AllowanceRequestPage({ params }: { params: Promise
             <section className="panel">
               <div className="panel-b stack" style={{ gap: 10 }}>
                 <div className="amt" style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
-                  <b style={{ fontFamily: "var(--serif)", fontSize: 30, color: "var(--navy)" }}>{a.amount}</b>
+                  <b style={{ fontSize: 30, color: "var(--navy)" }}>{a.amount}</b>
                   <span className="muted small">{a.cadence}</span>
                 </div>
                 <p className="small" style={{ color: "var(--ink-2)" }}>{a.coverage}</p>
@@ -98,11 +99,11 @@ export default async function AllowanceRequestPage({ params }: { params: Promise
             </section>
             <section className="panel">
               <div className="panel-b small" style={{ color: "var(--ink-2)" }}>
-                <b style={{ color: "var(--navy)" }}>Disbursement</b>
-                <p className="mt8">
-                  Approved allowances are paid by the Office of the Bursar. Payment arrangements are made in person at registration; the University never asks
-                  for bank or card details online.
-                </p>
+                <b style={{ color: "var(--navy)" }}>Paid to</b>
+                <p className="mt8">{masked(pay) || "The bank account in your payment details"}</p>
+                <Link className="small" href="/portal#payh">
+                  Change payment details
+                </Link>
               </div>
             </section>
           </aside>

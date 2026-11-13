@@ -270,6 +270,18 @@ create table if not exists password_resets (
   created_at timestamptz not null default now()
 );
 create index if not exists password_resets_applicant on password_resets(applicant_id);
+-- Bank details for allowance payments: sealed with AES-256-GCM like documents; only the bank,
+-- country and last four digits are kept in the clear, for display
+create table if not exists payment_details (
+  application_id uuid primary key references applications(id) on delete cascade,
+  sealed bytea not null,
+  bank_name text,
+  country text,
+  last4 text,
+  updated_at timestamptz not null default now()
+);
+alter table payment_details enable row level security;
+alter table allowance_requests add column if not exists paid_to text;
 alter table letters enable row level security;
 alter table emails enable row level security;
 alter table password_resets enable row level security;

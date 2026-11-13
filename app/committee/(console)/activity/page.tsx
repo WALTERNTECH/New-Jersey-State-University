@@ -40,7 +40,7 @@ export default async function Activity({ searchParams }: { searchParams: Promise
               {rows.slice(0, PAGE).map((r, i) => (
                 <tr key={i} style={{ cursor: "default" }}>
                   <td className="muted" style={{ whiteSpace: "nowrap" }}>
-                    {new Date(r.created_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    {new Date(r.created_at).toLocaleString("en-GB", { timeZone: "Australia/Sydney", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </td>
                   <td data-label="Who">{r.name ?? "System"}</td>
                   <td data-label="What">

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { badOrigin, currentApplicant, fail } from "@/lib/auth";
 import { applicationFor, documentsFor, progress } from "@/lib/application";
 import { knownFields } from "@/lib/form";
+import { paymentFor } from "@/lib/payment";
 
 export async function GET() {
   const me = await currentApplicant();
@@ -10,7 +11,7 @@ export async function GET() {
   const app = await applicationFor(me.id);
   if (!app) return fail(404, "No application found");
   const docs = await documentsFor(app.id);
-  return NextResponse.json({ application: app, documents: docs, progress: progress(app.data, docs) });
+  return NextResponse.json({ application: app, documents: docs, progress: progress(app.data, docs, await paymentFor(app.id)) });
 }
 
 /** Autosave: merges the fields sent into the draft. Unknown fields are ignored. */

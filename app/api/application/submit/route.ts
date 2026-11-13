@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { badOrigin, currentApplicant, fail } from "@/lib/auth";
 import { applicationFor, documentsFor, progress } from "@/lib/application";
 import { alertOffice, sendEmail } from "@/lib/email";
+import { paymentFor } from "@/lib/payment";
 
 export async function POST(req: Request) {
   if (badOrigin(req)) return fail(403, "Request blocked");
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
   const app = await applicationFor(me.id);
   if (!app) return fail(404, "No application found");
   if (app.status !== "draft") return NextResponse.json({ ok: true, reference: app.reference });
-  const p = progress(app.data, await documentsFor(app.id));
+  const p = progress(app.data, await documentsFor(app.id), await paymentFor(app.id));
   if (!p.ready) {
     const missing = p.sections.filter((s) => !s.done).map((s) => s.title);
     return fail(400, `Finish these sections first: ${missing.join(", ")}`, { missing });

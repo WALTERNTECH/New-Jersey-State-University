@@ -42,7 +42,7 @@ export default async function Verify({ searchParams }: { searchParams: Promise<{
       <main id="main">
         <section className="pagehero">
           <div className="wrap">
-            <span className="eyebrow light">Office of Admissions</span>
+            <span className="kicker light">Office of Admissions</span>
             <h1>Verify a letter of admission</h1>
             <p>Enter the reference and verification code printed at the foot of the letter to confirm that it was issued by {programme.university}.</p>
           </div>

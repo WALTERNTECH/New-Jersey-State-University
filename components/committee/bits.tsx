@@ -24,7 +24,7 @@ export const when = (s: string | null | undefined) => {
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins} min ago`;
   if (mins < 60 * 24) return `${Math.round(mins / 60)} h ago`;
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
+  return d.toLocaleDateString("en-GB", { timeZone: "Australia/Sydney", day: "numeric", month: "short", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
 };
 
 export const actionLabels: Record<string, string> = {
@@ -55,6 +55,7 @@ export const actionLabels: Record<string, string> = {
   view_letter: "opened the letter of admission of",
   letter_sent: "emailed the letter of admission to",
   emails_resent: "resent emails",
+  view_payment: "viewed the bank details of",
 };
 
 export function Bars({ rows }: { rows: { label: string; n: number }[] }) {

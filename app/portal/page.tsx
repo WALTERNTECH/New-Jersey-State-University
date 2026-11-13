@@ -10,6 +10,9 @@ import { requestsFor, requestStatusLabels } from "@/lib/allowances";
 import { allowanceBySlug, allowances, programme } from "@/lib/content";
 import { awardLines } from "@/lib/award";
 import { letterFor, letterIsCurrent } from "@/lib/letter";
+import { masked, paymentFor, paymentSummary } from "@/lib/payment";
+import { CheckIcon } from "@/components/Icons";
+import PaymentDetails from "@/components/portal/PaymentDetails";
 import { enrolKindSet, enrolmentDocs, statusLabels } from "@/lib/form";
 import { fmtDate } from "@/lib/client";
 
@@ -33,7 +36,7 @@ const headline: Record<string, string> = {
 function message(status: string, email: string) {
   switch (status) {
     case "under_review":
-      return "The Scholarship Committee is reviewing your application and verifying your academic documents. No action is required of you at this time.";
+      return "The Scholarship Committee is reviewing your application.";
     case "interview":
       return `Congratulations on being shortlisted. The Office of Admissions will write to you at ${email} to arrange a 30-minute interview with members of the Scholarship Committee.`;
     case "awarded":
@@ -43,13 +46,13 @@ function message(status: string, email: string) {
     case "not_selected":
       return "We regret that we are unable to offer you admission with the Access Scholarship this year. The Committee received many exceptional applications, and its decisions reflect the limited number of places rather than any shortcoming in your achievements. We encourage you to apply in a future cycle.";
     case "accepted":
-      return `Thank you for accepting your offer. Please complete the steps below before you report to campus in ${programme.arrival}. Once the Office has verified your identification documents and arrival plan, you will be cleared to report, and your enrolment is confirmed in person at registration.`;
+      return `Complete the steps below before you report to campus in ${programme.arrival}.`;
     case "declined_offer":
       return "You have declined your offer of admission. We wish you every success in your studies. If you declined in error, please contact the Office of Admissions without delay.";
     case "enrolled":
       return "You are enrolled as an Access Scholar. Allowances for enrolled students, including summer research, study abroad and emergency support, are now open to you.";
     default:
-      return `Thank you for applying. The Scholarship Committee will review your application after the deadline. This page is updated at every stage, and we will write to ${email} when there is news.`;
+      return `Your application has been received. Updates are shown here and sent to ${email}.`;
   }
 }
 
@@ -57,7 +60,7 @@ export default async function Portal() {
   const me = await requireApplicant("/portal");
   const app = await applicationFor(me.id);
   if (!app) redirect("/apply");
-  const [allDocs, events, requests, letter] = await Promise.all([documentsFor(app.id), eventsFor(app.id), requestsFor(app.id), letterFor(app.id)]);
+  const [allDocs, events, requests, letter, payment, paySummary] = await Promise.all([documentsFor(app.id), eventsFor(app.id), requestsFor(app.id), letterFor(app.id), paymentFor(app.id), paymentSummary(app.id)]);
   const docs = allDocs.filter((d) => !enrolKindSet.has(d.kind));
   const idDocs = allDocs.filter((d) => enrolKindSet.has(d.kind));
   const latestId = (kind: string) => [...idDocs].reverse().find((d) => d.kind === kind);
@@ -65,7 +68,7 @@ export default async function Portal() {
   const idUploaded = idRequired.every((k) => latestId(k.kind) && latestId(k.kind)!.review !== "rejected");
   const idVerified = idRequired.every((k) => latestId(k.kind)?.review === "verified");
   const hasLetter = letterIsCurrent(letter);
-  const p = progress(app.data, docs);
+  const p = progress(app.data, docs, payment);
   const s = app.status;
   const draft = s === "draft";
   const admitted = ADMITTED_STAGES.includes(s);
@@ -105,8 +108,8 @@ export default async function Portal() {
         <div className="portalbar">
           <div className="wrap">
             <div>
-              <span className="eyebrow">{programme.name} · {programme.cycle}</span>
-              <h1 className="mt8">Welcome, {name}</h1>
+              <span className="kicker">{programme.name} · {programme.cycle}</span>
+              <h1>Welcome, {name}</h1>
             </div>
             <div className="flex">
               <span className={`pill${draft ? "" : " ok"}`}>{statusLabels[s] ?? s}</span>
@@ -121,27 +124,31 @@ export default async function Portal() {
               <section className="panel" aria-labelledby="apph">
                 <div className="panel-h">
                   <div>
-                    <h2 id="apph">Your application</h2>
-                    <p className="small muted mt8">
-                      {p.done} of {p.total} sections complete · last saved {fmtDate(app.updated_at, true)}
-                    </p>
+                    <h2 id="apph">{programme.cycleCode} Access Scholarship application</h2>
+                    <p className="small muted mt8">Last saved {fmtDate(app.updated_at, true)}</p>
                   </div>
                   <Link className="btn btn-primary" href={p.ready ? "/portal/application?step=review" : `/portal/application?step=${firstOpen?.id ?? "personal"}`}>
-                    {p.ready ? "Review and submit" : p.done === 0 ? "Begin application" : "Continue application"}
+                    {p.ready ? "Review and submit" : p.percent === 0 ? "Start application" : "Continue application"}
                   </Link>
                 </div>
-                <div className="panel-b" style={{ paddingBottom: 8 }}>
-                  <div className="bar">
-                    <i style={{ width: `${(p.done / p.total) * 100}%` }} />
+                <div className="panel-b">
+                  <div className="pctline">
+                    <b>{p.percent}% complete</b>
+                    <span className="small muted">
+                      {p.done} of {p.total} sections
+                    </span>
+                  </div>
+                  <div className="bar" role="progressbar" aria-label="Application progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={p.percent}>
+                    <i style={{ width: `${p.percent}%` }} />
                   </div>
                 </div>
                 <ul className="secs">
                   {p.sections.map((x, i) => (
                     <li key={x.id}>
                       <Link href={`/portal/application?step=${x.id}`}>
-                        <span className={`circ${x.done ? " done" : ""}`}>{x.done ? "✓" : i + 1}</span>
+                        <span className={`circ${x.done ? " done" : ""}`}>{x.done ? <CheckIcon /> : i + 1}</span>
                         <span>{x.title}</span>
-                        <span className={`st${x.done ? " done" : ""}`}>{x.done ? "Complete" : "To complete"}</span>
+                        <span className={`st${x.done ? " done" : x.state === "started" ? " started" : ""}`}>{x.done ? "Completed" : x.state === "started" ? "In progress" : "Not started"}</span>
                       </Link>
                     </li>
                   ))}
@@ -206,23 +213,15 @@ export default async function Portal() {
                   </li>
                   <li className={idVerified ? "done" : "now"}>
                     <b>Upload your identification documents</b>
-                    <p>
-                      {idVerified
-                        ? "Your documents have been verified by the Office."
-                        : idUploaded
-                          ? "Thank you. The Office is verifying your documents and will email you if anything needs replacing."
-                          : "Required for your student record, your identity card and your enrolment. Each file is checked by the Office."}
-                    </p>
+                    <p>{idVerified ? "Verified" : idUploaded ? "Awaiting verification" : "Not uploaded"}</p>
                     <div className="mt16"><EnrolmentDocs initial={idDocs} /></div>
                   </li>
                   <li className={arrival ? "done" : idUploaded ? "now" : ""}>
                     <b>Submit your arrival plan</b>
-                    <p>Tell us when and how you will arrive so that we can meet you and prepare your room.</p>
                     <div className="mt16"><ArrivalForm initial={arrival as never} /></div>
                   </li>
                   <li className={submittedReqs.length ? "done" : ""}>
                     <b>Request your pre-arrival allowances</b>
-                    <p>Travel, settling-in and, where relevant, visa fee reimbursement and off-campus housing.</p>
                     <div className="flex mt16">
                       {preArrival.map((a) => (
                         <Link key={a.slug} className="btn btn-ghost btn-sm" href={`/portal/allowances/${a.slug}`}>{a.title.replace(/ Allowance| Grant| and Board Allowance|, Immigration and SEVIS Fee Reimbursement/g, "")}</Link>
@@ -231,17 +230,12 @@ export default async function Portal() {
                   </li>
                   <li className={app.cleared_at ? "done" : ""}>
                     <b>{app.cleared_at ? "Cleared to report" : "Clearance to report"}</b>
-                    <p>
-                      {app.cleared_at
-                        ? `Confirmed ${fmtDate(app.cleared_at)}. Your documents and arrival plan are complete.`
-                        : "Given automatically once your documents are verified and your arrival plan is in. We will confirm it by email."}
-                    </p>
+                    <p>{app.cleared_at ? fmtDate(app.cleared_at) : "After documents are verified and the arrival plan is received"}</p>
                   </li>
                   <li className={app.cleared_at ? "now" : ""}>
                     <b>Report to campus in person</b>
                     <p>
-                      Present yourself at registration in {programme.arrival} with your passport, a printed copy of your letter of admission and your original academic
-                      certificates. Your enrolment, and the disbursement of your allowances, are confirmed in person by the Office of the Registrar and the Bursar.
+                      Registration, {programme.arrival}. Bring your passport, your letter of admission and your original certificates.
                     </p>
                   </li>
                 </ol>
@@ -275,8 +269,18 @@ export default async function Portal() {
               <section className="panel" aria-labelledby="doch">
                 <div className="panel-h"><h2 id="doch">Supporting documents</h2></div>
                 <div className="panel-b">
-                  <p className="small muted" style={{ marginBottom: 16 }}>Your required documents are on file. Supplementary documents may be added or updated below.</p>
                   <PostDocs initial={docs} />
+                </div>
+              </section>
+            )}
+
+            {!draft && !["not_selected", "declined_offer"].includes(s) && (
+              <section className="panel" aria-labelledby="payh">
+                <div className="panel-h">
+                  <h2 id="payh">Payment details</h2>
+                </div>
+                <div className="panel-b">
+                  <PaymentDetails initial={payment ?? {}} account={masked(paySummary)} />
                 </div>
               </section>
             )}
@@ -301,7 +305,7 @@ export default async function Portal() {
               <div className="panel-b">
                 <h3 style={{ fontSize: 18 }}>Key dates</h3>
                 <ul className="small" style={{ paddingLeft: 18, margin: "12px 0 0", color: "var(--ink-2)", display: "grid", gap: 8 }}>
-                  <li>Application deadline: {programme.deadline}, 11:59 p.m. Eastern Time</li>
+                  <li>Application deadline: {programme.deadline}, {programme.deadlineTime}</li>
                   <li>Admission decisions: by {programme.decisions}</li>
                   <li>Reply to offers: by {programme.replyBy}</li>
                   <li>Registration and orientation: {programme.arrival}</li>

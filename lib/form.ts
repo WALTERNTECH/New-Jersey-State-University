@@ -1,8 +1,8 @@
 // The application, described once and used by the form, the review page and the server checks.
 import { countries } from "./countries";
-import { programmes } from "./content";
+import { countryNames, eligibleCountries, programmes } from "./content";
 
-export type FieldType = "text" | "email" | "tel" | "date" | "select" | "textarea" | "number" | "yesno";
+export type FieldType = "text" | "email" | "date" | "select" | "textarea" | "number" | "yesno" | "phone";
 
 export interface Field {
   name: string;
@@ -10,8 +10,6 @@ export interface Field {
   type: FieldType;
   required?: boolean;
   options?: string[];
-  hint?: string;
-  placeholder?: string;
   autoComplete?: string;
   minWords?: number;
   maxWords?: number;
@@ -19,6 +17,9 @@ export interface Field {
   min?: number;
   max?: number;
   half?: boolean;
+  /** Digits only, exactly this many (for example an Australian BSB). */
+  digits?: number;
+  pattern?: { re: RegExp; message: string };
   showIf?: (d: Data) => boolean;
 }
 
@@ -26,8 +27,9 @@ export interface Step {
   id: string;
   title: string;
   short: string;
-  intro: string;
   fields: Field[];
+  /** Stored encrypted and apart from the rest of the application, never in the general record. */
+  secure?: boolean;
 }
 
 export type Data = Record<string, string>;
@@ -37,28 +39,26 @@ const yearNow = new Date().getFullYear();
 export const steps: Step[] = [
   {
     id: "personal",
-    title: "About you",
-    short: "About you",
-    intro: "Please enter your name exactly as it appears on your passport or national identity document.",
+    title: "Student identity",
+    short: "Identity",
     fields: [
       { name: "first_name", label: "First name", type: "text", required: true, autoComplete: "given-name", half: true, maxLength: 80 },
       { name: "last_name", label: "Last name", type: "text", required: true, autoComplete: "family-name", half: true, maxLength: 80 },
       { name: "middle_name", label: "Middle name", type: "text", autoComplete: "additional-name", half: true, maxLength: 80 },
-      { name: "preferred_name", label: "Preferred name", type: "text", half: true, maxLength: 80, hint: "If different from your first name." },
+      { name: "preferred_name", label: "Preferred name", type: "text", half: true, maxLength: 80 },
       { name: "date_of_birth", label: "Date of birth", type: "date", required: true, autoComplete: "bday", half: true },
       { name: "gender", label: "Gender", type: "select", options: ["Female", "Male", "Non-binary", "Prefer not to say"], half: true },
-      { name: "citizenship", label: "Country of citizenship", type: "select", options: countries, required: true, half: true },
-      { name: "residence", label: "Country where you live", type: "select", options: countries, required: true, half: true },
+      { name: "citizenship", label: "Country of citizenship", type: "select", options: [...countryNames], required: true, half: true },
+      { name: "residence", label: "Country of residence", type: "select", options: [...countryNames], required: true, half: true },
     ],
   },
   {
     id: "contact",
-    title: "Contact details",
+    title: "Contact information",
     short: "Contact",
-    intro: "The Office of Admissions will use these details to contact you regarding interviews and your admission decision.",
     fields: [
-      { name: "phone", label: "Mobile number", type: "tel", required: true, autoComplete: "tel", hint: "Include your country code, for example +254 712 345 678.", half: true, maxLength: 24 },
-      { name: "whatsapp", label: "Can we reach you on WhatsApp at this number?", type: "yesno", half: true },
+      { name: "phone", label: "Mobile number", type: "phone", required: true, autoComplete: "tel-national" },
+      { name: "whatsapp", label: "Is this number on WhatsApp?", type: "yesno" },
       { name: "address", label: "Street address", type: "text", required: true, autoComplete: "street-address", maxLength: 160 },
       { name: "city", label: "City or town", type: "text", required: true, autoComplete: "address-level2", half: true, maxLength: 80 },
       { name: "region", label: "State, county or region", type: "text", autoComplete: "address-level1", half: true, maxLength: 80 },
@@ -69,7 +69,6 @@ export const steps: Step[] = [
     id: "academics",
     title: "Academic background",
     short: "Education",
-    intro: "Provide details of your secondary education and your intended course of study at New Jersey State University.",
     fields: [
       {
         name: "education_level",
@@ -84,55 +83,45 @@ export const steps: Step[] = [
           "Vocational or technical certificate",
         ],
       },
-      { name: "school_name", label: "Secondary / high school name", type: "text", required: true, maxLength: 160, half: true },
+      { name: "school_name", label: "Secondary school name", type: "text", required: true, maxLength: 160, half: true },
       { name: "school_country", label: "Country of school", type: "select", options: countries, required: true, half: true },
-      { name: "graduation_year", label: "Year completed (or expected)", type: "number", required: true, min: 1970, max: yearNow + 1, half: true },
-      { name: "grades", label: "Final grade or average", type: "text", required: true, half: true, maxLength: 60, placeholder: "e.g. KCSE B+, GPA 3.6, WAEC 6 credits" },
-      { name: "major", label: "Programme you would like to study", type: "select", options: programmes, required: true, half: true },
+      { name: "graduation_year", label: "Year completed or expected", type: "number", required: true, min: 1970, max: yearNow + 1, half: true },
+      { name: "grades", label: "Final grade or average", type: "text", required: true, half: true, maxLength: 60 },
+      { name: "major", label: "Intended programme of study", type: "select", options: programmes, required: true, half: true },
       {
         name: "english",
-        label: "Your English",
+        label: "English",
         type: "select",
         required: true,
         half: true,
         options: ["First language", "My school taught in English", "I have an English test score", "I am still learning English"],
       },
-      {
-        name: "english_test",
-        label: "Test and score",
-        type: "text",
-        maxLength: 60,
-        placeholder: "e.g. IELTS 6.5, Duolingo 115",
-        showIf: (d) => d.english === "I have an English test score",
-        required: true,
-      },
+      { name: "english_test", label: "English test and score", type: "text", maxLength: 60, showIf: (d) => d.english === "I have an English test score", required: true },
     ],
   },
   {
     id: "household",
     title: "Household and finances",
     short: "Household",
-    intro: "This information allows the Committee to assess financial need. Reasonable estimates are acceptable.",
     fields: [
-      { name: "household_size", label: "People in your household", type: "number", required: true, min: 1, max: 30, half: true, hint: "Including you." },
-      { name: "earners", label: "How many of them earn an income", type: "number", required: true, min: 0, max: 30, half: true },
+      { name: "household_size", label: "People in your household, including you", type: "number", required: true, min: 1, max: 30, half: true },
+      { name: "earners", label: "People in your household who earn an income", type: "number", required: true, min: 0, max: 30, half: true },
       {
         name: "income",
-        label: "Yearly household income (US dollars, estimate)",
+        label: "Yearly household income (US dollars)",
         type: "select",
         required: true,
         options: ["Under $2,000", "$2,000 – $5,000", "$5,000 – $10,000", "$10,000 – $20,000", "$20,000 – $40,000", "Over $40,000"],
       },
       { name: "first_generation", label: "Would you be the first in your family to attend university?", type: "yesno", required: true },
       { name: "orphan_or_care", label: "Have you lost a parent, or grown up in care?", type: "yesno", required: true },
-      { name: "circumstances", label: "Anything else about your situation we should know", type: "textarea", maxWords: 200, hint: "Optional. Up to 200 words." },
+      { name: "circumstances", label: "Other circumstances", type: "textarea", maxWords: 200 },
     ],
   },
   {
     id: "support",
     title: "Scholarship support",
     short: "Support",
-    intro: "Certain allowances are arranged from the outset. Your answers here allow the Office of Financial Aid to prepare your award should you be admitted.",
     fields: [
       {
         name: "housing",
@@ -140,43 +129,62 @@ export const steps: Step[] = [
         type: "select",
         required: true,
         options: ["University residence hall with dining plan", "Off-campus housing (Off-Campus Housing and Board Allowance)"],
-        hint: "First-year scholars are strongly encouraged to live in residence. Off-campus arrangements are confirmed after admission.",
       },
-      { name: "laptop", label: "Do you require the Laptop and Technology Allowance?", type: "yesno", required: true, hint: "Scholars who already own a suitable computer may decline it." },
+      { name: "laptop", label: "Do you require the Laptop and Technology Allowance?", type: "yesno", required: true },
       { name: "visa_needed", label: "Will you require a U.S. student (F-1) visa?", type: "yesno", required: true },
-      { name: "accessibility", label: "Accessibility, medical or dietary needs we should plan for", type: "textarea", maxWords: 150, hint: "Optional. Shared only with the offices that arrange your support." },
+      { name: "accessibility", label: "Accessibility, medical or dietary needs", type: "textarea", maxWords: 150 },
     ],
   },
   {
     id: "essays",
     title: "Personal statements",
     short: "Statements",
-    intro: "Two short statements in your own words. The Committee is interested in your perspective and aspirations rather than in polished prose.",
     fields: [
       { name: "essay_goals", label: "What do you hope to study, and what will you do with your degree?", type: "textarea", required: true, minWords: 100, maxWords: 400 },
-      { name: "essay_challenge", label: "Tell us about a challenge you have faced and what it taught you.", type: "textarea", required: true, minWords: 100, maxWords: 400 },
+      { name: "essay_challenge", label: "Describe a challenge you have faced and what it taught you.", type: "textarea", required: true, minWords: 100, maxWords: 400 },
+    ],
+  },
+  {
+    id: "payment",
+    title: "Payment details",
+    short: "Payment",
+    secure: true,
+    fields: [
+      { name: "bank_country", label: "Country of the bank", type: "select", options: [...countryNames], required: true, half: true },
+      { name: "account_holder", label: "Account holder name", type: "text", required: true, half: true, maxLength: 120 },
+      { name: "bank_name", label: "Bank name", type: "text", required: true, half: true, maxLength: 120 },
+      { name: "branch", label: "Branch", type: "text", half: true, maxLength: 120 },
+      { name: "bsb", label: "BSB", type: "text", required: true, half: true, digits: 6, showIf: (d) => d.bank_country === "Australia" },
+      {
+        name: "account_number",
+        label: "Account number or IBAN",
+        type: "text",
+        required: true,
+        half: true,
+        maxLength: 34,
+        pattern: { re: /^[A-Za-z0-9 ]{5,34}$/, message: "Enter the account number as shown by your bank" },
+      },
+      { name: "swift", label: "SWIFT / BIC code", type: "text", half: true, maxLength: 11, pattern: { re: /^[A-Za-z0-9]{8}([A-Za-z0-9]{3})?$/, message: "A SWIFT code has 8 or 11 letters and numbers" } },
     ],
   },
 ];
 
+export const paymentStep = steps.find((s) => s.secure)!;
+export const paymentFields = new Set(paymentStep.fields.map((f) => f.name));
+
 /** Documents submitted with the application. Identification is requested only after an offer is accepted. */
 export const documentKinds = [
-  { kind: "transcript", label: "Academic transcript or certificate", hint: "Your most recent results slip, transcript or school leaving certificate.", required: true },
-  { kind: "income", label: "Proof of household income", hint: "A letter from a local official, a payslip or a benefits letter. Can follow within 14 days.", required: false },
-  { kind: "english", label: "English evidence", hint: "A test score report, or a school letter confirming English instruction.", required: false },
+  { kind: "transcript", label: "Academic transcript or certificate", required: true },
+  { kind: "income", label: "Proof of household income", required: false },
+  { kind: "english", label: "English test result or school letter", required: false },
 ] as const;
 
 /** Identification and enrolment documents, requested from admitted scholars once they accept, and verified by the Office. */
 export const enrolmentDocs = [
-  {
-    kind: "passport",
-    label: "Passport biographical page",
-    hint: "The page with your photograph and details. If your passport has not been issued yet, upload your national identity card and replace it later.",
-    required: true,
-  },
-  { kind: "photo", label: "Passport-style photograph", hint: "A recent colour photograph against a plain, light background, used for your student identity card.", required: true },
-  { kind: "immunisation", label: "Immunisation record", hint: "Your vaccination card or a doctor's certificate. New Jersey requires proof of certain immunisations for enrolment.", required: true },
-  { kind: "certificate", label: "Final school certificate", hint: "Only if your final results or leaving certificate were issued after you applied.", required: false },
+  { kind: "passport", label: "Passport biographical page", required: true },
+  { kind: "photo", label: "Passport-style photograph", required: true },
+  { kind: "immunisation", label: "Immunisation record", required: true },
+  { kind: "certificate", label: "Final school certificate", required: false },
 ] as const;
 
 export type DocKind = (typeof documentKinds)[number]["kind"];
@@ -189,20 +197,53 @@ export const docLabel = (kind: string) =>
 
 export const reviewLabels: Record<string, string> = { pending: "Awaiting verification", verified: "Verified", rejected: "Needs replacing" };
 
-export const allSteps = [...steps.map((s) => ({ id: s.id, short: s.short })), { id: "documents", short: "Documents" }, { id: "review", short: "Review" }];
+export const allSteps = [
+  ...steps.map((s) => ({ id: s.id, short: s.short, title: s.title })),
+  { id: "documents", short: "Documents", title: "Documents" },
+  { id: "review", short: "Sign and submit", title: "Review, sign and submit" },
+];
 
 export const wordCount = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0);
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const isEmail = (s: string) => emailRe.test(s);
 
+// ---------- phone numbers: a country, then the national number after its code ----------
+
+type Country = (typeof eligibleCountries)[number];
+const byLongestDial = [...eligibleCountries].sort((a, b) => b.dial.length - a.dial.length);
+export const countryByName = (name: string | undefined) => eligibleCountries.find((c) => c.name === name);
+
+/** "+254 712345678" → Kenya and "712345678". */
+export function splitPhone(v: string): { country: Country | null; national: string } {
+  const s = (v ?? "").replace(/[^\d+]/g, "");
+  const c = byLongestDial.find((x) => s.startsWith(x.dial));
+  return c ? { country: c, national: s.slice(c.dial.length) } : { country: null, national: s.replace(/^\+/, "") };
+}
+
+/** Joins a country and what was typed, dropping a leading trunk zero ("0712…" → "712…"). */
+export function joinPhone(country: Country | undefined, typed: string) {
+  const digits = typed.replace(/\D/g, "").replace(/^0+/, "");
+  return country ? `${country.dial} ${digits}` : digits;
+}
+
+export function phoneError(v: string): string | null {
+  const { country, national } = splitPhone(v);
+  if (!country) return "Choose the country for this number";
+  if (!national) return "Enter the phone number";
+  if (!(country.digits as readonly number[]).includes(national.length)) return `Enter the ${country.digits[0]} digits after ${country.dial}`;
+  return null;
+}
+
 export function fieldError(f: Field, d: Data): string | null {
   if (f.showIf && !f.showIf(d)) return null;
   const v = (d[f.name] ?? "").trim();
+  if (f.type === "phone") return v && splitPhone(v).national ? phoneError(v) : f.required ? "This is required" : null;
   if (!v) return f.required ? "This is required" : null;
   if (f.maxLength && v.length > f.maxLength) return `Keep this under ${f.maxLength} characters`;
   if (f.type === "email" && !emailRe.test(v)) return "Enter a valid email address";
-  if (f.type === "tel" && v.replace(/\D/g, "").length < 7) return "Enter a full phone number";
+  if (f.digits && !new RegExp(`^\\d{${f.digits}}$`).test(v.replace(/[\s-]/g, ""))) return `Enter ${f.digits} digits`;
+  if (f.pattern && !f.pattern.re.test(v)) return f.pattern.message;
   if (f.type === "number") {
     const n = Number(v);
     if (!Number.isFinite(n)) return "Enter a number";
@@ -234,7 +275,37 @@ export function stepErrors(step: Step, d: Data): Record<string, string> {
   return out;
 }
 
-export const knownFields = new Set(steps.flatMap((s) => s.fields.map((f) => f.name)));
+/** Fields saved with the general application record. Payment details are never among them. */
+export const knownFields = new Set(steps.filter((s) => !s.secure).flatMap((s) => s.fields.map((f) => f.name)));
+
+/**
+ * How much of the application is done: every required answer and required document counts
+ * once, so the figure moves with each question rather than jumping a section at a time.
+ */
+export function completion(data: Data, payment: Data | null, docs: { kind: string }[]) {
+  let total = 0;
+  let done = 0;
+  for (const s of steps) {
+    const d = s.secure ? payment ?? {} : data;
+    for (const f of s.fields) {
+      if (!f.required || (f.showIf && !f.showIf(d))) continue;
+      total++;
+      if (!fieldError(f, d)) done++;
+    }
+  }
+  for (const k of documentKinds) {
+    if (!k.required) continue;
+    total++;
+    if (docs.some((x) => x.kind === k.kind)) done++;
+  }
+  return { done, total, percent: total ? Math.floor((done / total) * 100) : 0 };
+}
+
+/** Per section: complete, started or not started. */
+export function sectionState(step: Step, d: Data): "complete" | "started" | "empty" {
+  if (Object.keys(stepErrors(step, d)).length === 0) return "complete";
+  return step.fields.some((f) => (d[f.name] ?? "").trim()) ? "started" : "empty";
+}
 
 export const statusLabels: Record<string, string> = {
   draft: "In progress",

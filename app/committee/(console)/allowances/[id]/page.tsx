@@ -8,6 +8,8 @@ import { requestStatusLabels } from "@/lib/allowances";
 import { fmtDate, fmtSize } from "@/lib/client";
 import { StatusChip, when } from "@/components/committee/bits";
 import { AllowanceDecision } from "@/components/committee/AllowanceActions";
+import { RevealPayment } from "@/components/committee/RevealPayment";
+import { masked, paymentSummary } from "@/lib/payment";
 
 export const metadata = { title: "Allowance request" };
 export const dynamic = "force-dynamic";
@@ -18,10 +20,10 @@ export default async function AllowanceRequest({ params }: { params: Promise<{ i
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const q = await db();
   const { rows } = await q.query<{
-    id: string; slug: string; status: string; data: Record<string, string>; decision_note: string | null; submitted_at: string; decided_at: string | null;
+    id: string; slug: string; status: string; data: Record<string, string>; decision_note: string | null; submitted_at: string; decided_at: string | null; paid_to: string | null;
     app_id: string; reference: string; app_status: string; app: Record<string, string>; decider: string | null;
   }>(
-    `select r.id, r.slug, r.status, r.data, r.decision_note, r.submitted_at, r.decided_at, a.id as app_id, a.reference, a.status as app_status, a.data as app, s.name as decider
+    `select r.id, r.slug, r.status, r.data, r.decision_note, r.submitted_at, r.decided_at, r.paid_to, a.id as app_id, a.reference, a.status as app_status, a.data as app, s.name as decider
      from allowance_requests r join applications a on a.id = r.application_id left join staff s on s.id = r.decided_by
      where r.id = $1 and r.status <> 'draft'`,
     [id],
@@ -29,6 +31,7 @@ export default async function AllowanceRequest({ params }: { params: Promise<{ i
   const r = rows[0];
   if (!r) notFound();
   const a = allowanceBySlug(r.slug);
+  const pay = await paymentSummary(r.app_id);
   const files = await q.query<{ id: string; doc_key: string; filename: string; size: number; created_at: string }>(
     "select id, doc_key, filename, size, created_at from allowance_files where request_id = $1 order by created_at",
     [id],
@@ -93,6 +96,15 @@ export default async function AllowanceRequest({ params }: { params: Promise<{ i
           </section>
         </div>
         <aside className="c-grid">
+          <section className="c-card">
+            <div className="c-card-h">
+              <h2>{r.status === "disbursed" ? "Paid to" : "Pay to"}</h2>
+            </div>
+            <div className="c-card-b stack" style={{ gap: 10 }}>
+              <b>{r.paid_to || masked(pay) || "No payment details on file"}</b>
+              {pay && <RevealPayment appId={r.app_id} canReveal={canDecide(me)} />}
+            </div>
+          </section>
           <section className="c-card">
             <div className="c-card-h"><h2>Decision</h2></div>
             <div className="c-card-b stack" style={{ gap: 12 }}>

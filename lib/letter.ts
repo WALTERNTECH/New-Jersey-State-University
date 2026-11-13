@@ -69,7 +69,7 @@ const L = 72;
 const R = W - 72;
 const BOTTOM = 92;
 
-const longDate = (d: string | Date) => new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+const longDate = (d: string | Date) => new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "Australia/Sydney" });
 
 /** Standard PDF fonts only cover Western European characters; anything else is simplified rather than failing. */
 function cleaner(font: PDFFont) {

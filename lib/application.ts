@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./db";
-import { steps, stepErrors, documentKinds, type Data } from "./form";
+import { completion, sectionState, steps, stepErrors, documentKinds, type Data } from "./form";
 
 export interface AppRow {
   id: string;
@@ -57,12 +57,16 @@ export async function eventsFor(applicationId: string) {
   return rows;
 }
 
-/** Which sections are complete, and what still blocks submission. */
-export function progress(data: Data, docs: { kind: string }[]) {
-  const sections = steps.map((s) => ({ id: s.id, title: s.title, done: Object.keys(stepErrors(s, data)).length === 0 }));
+/** Which sections are complete, how far along the application is, and what still blocks submission. */
+export function progress(data: Data, docs: { kind: string }[], payment: Data | null) {
+  const sections = steps.map((s) => {
+    const d = s.secure ? payment ?? {} : data;
+    return { id: s.id, title: s.title, done: Object.keys(stepErrors(s, d)).length === 0, state: sectionState(s, d) };
+  });
   const have = new Set(docs.map((d) => d.kind));
   const missingDocs = documentKinds.filter((k) => k.required && !have.has(k.kind)).map((k) => k.label);
-  sections.push({ id: "documents", title: "Documents", done: missingDocs.length === 0 });
+  sections.push({ id: "documents", title: "Documents", done: missingDocs.length === 0, state: missingDocs.length === 0 ? "complete" : docs.length ? "started" : "empty" });
   const done = sections.filter((s) => s.done).length;
-  return { sections, missingDocs, done, total: sections.length, ready: done === sections.length };
+  const { percent } = completion(data, payment, docs);
+  return { sections, missingDocs, done, total: sections.length, ready: done === sections.length, percent };
 }

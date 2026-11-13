@@ -6,7 +6,7 @@ import { api, fmtSize } from "@/lib/client";
 import { shrink } from "@/components/Documents";
 import type { AllowanceField } from "@/lib/content";
 
-type DocSpec = { key: string; label: string; hint: string; required: boolean };
+type DocSpec = { key: string; label: string; hint?: string; required: boolean };
 const MAX = 4 * 1024 * 1024;
 
 export default function AllowanceForm({ slug, fields, documents, initial, existingFiles }: {
@@ -94,7 +94,7 @@ export default function AllowanceForm({ slug, fields, documents, initial, existi
               </label>
               {f.type === "select" ? (
                 <select className="input" {...common}>
-                  <option value="">Choose…</option>
+                  <option value="">- Select -</option>
                   {f.options!.map((o) => (
                     <option key={o}>{o}</option>
                   ))}

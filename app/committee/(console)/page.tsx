@@ -16,10 +16,10 @@ export default async function Dashboard() {
   const [c, today, daily, countries, majors, incomes, feed] = await Promise.all([
     statusCounts(me.id),
     q.query<{ submitted: number; started: number }>(
-      "select count(*) filter (where submitted_at >= date_trunc('day', now()))::int as submitted, count(*) filter (where created_at >= date_trunc('day', now()))::int as started from applications",
+      "select count(*) filter (where submitted_at >= (date_trunc('day', now() at time zone 'Australia/Sydney') at time zone 'Australia/Sydney'))::int as submitted, count(*) filter (where created_at >= (date_trunc('day', now() at time zone 'Australia/Sydney') at time zone 'Australia/Sydney'))::int as started from applications",
     ),
     q.query<{ d: string; n: number }>(
-      "select to_char(date_trunc('day', submitted_at), 'YYYY-MM-DD') as d, count(*)::int as n from applications where submitted_at >= now() - interval '30 days' group by 1",
+      "select to_char(date_trunc('day', submitted_at at time zone 'Australia/Sydney'), 'YYYY-MM-DD') as d, count(*)::int as n from applications where submitted_at >= now() - interval '30 days' group by 1",
     ),
     q.query<{ label: string; n: number }>("select data->>'residence' as label, count(*)::int as n from applications where status <> 'draft' group by 1 order by 2 desc, 1 limit 6"),
     q.query<{ label: string; n: number }>("select data->>'major' as label, count(*)::int as n from applications where status <> 'draft' group by 1 order by 2 desc, 1 limit 6"),
@@ -36,7 +36,7 @@ export default async function Dashboard() {
 
   const perDay = new Map(daily.rows.map((r) => [r.d, Number(r.n)]));
   const days = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(Date.now() - (29 - i) * 864e5).toISOString().slice(0, 10);
+    const d = new Date(Date.now() - (29 - i) * 864e5).toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
     return { d, n: perDay.get(d) ?? 0 };
   });
   const maxDay = Math.max(1, ...days.map((d) => d.n));
@@ -141,7 +141,7 @@ export default async function Dashboard() {
             })}
           </svg>
           <div className="flex small muted" style={{ justifyContent: "space-between" }}>
-            <span>{new Date(days[0].d).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
+            <span>{new Date(days[0].d).toLocaleDateString("en-GB", { timeZone: "UTC", day: "numeric", month: "short" })}</span>
             <span>Today</span>
           </div>
         </div>

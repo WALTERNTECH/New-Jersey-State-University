@@ -39,7 +39,7 @@ export default async function AllowanceRequests({ searchParams }: { searchParams
       <div className="c-head">
         <div>
           <h1>Allowance requests</h1>
-          <p>Requests from admitted and enrolled scholars. Bank details are never collected online; the Bursar arranges payment at registration.</p>
+          <p>Requests from admitted and enrolled scholars. Approved requests are paid by bank transfer to the account in each scholar's payment details.</p>
         </div>
       </div>
       <div className="c-card">

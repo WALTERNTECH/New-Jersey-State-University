@@ -14,8 +14,6 @@ export default async function ResetPage({ searchParams }: { searchParams: Promis
         <AuthSide
           eyebrow="Applicant portal"
           title="Choose a new password"
-          body="Use at least 8 characters. You will be signed out on every other device."
-          points={["Your application is unaffected", "Sign in with the new password afterwards"]}
         />
         <div className="authx-main">
           <ResetForm token={token} />

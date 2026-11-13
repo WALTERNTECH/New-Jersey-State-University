@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { badOrigin, currentApplicant, fail } from "@/lib/auth";
 import { maybeClear } from "@/lib/stages";
 import { alertOffice } from "@/lib/email";
+import { phoneError } from "@/lib/form";
 
 const Body = z.object({
   arrival_date: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "date"),
@@ -11,7 +12,7 @@ const Body = z.object({
   arrival_point: z.string().trim().min(2).max(160),
   carrier: z.string().trim().max(160).optional().default(""),
   contact_name: z.string().trim().min(2).max(120),
-  contact_phone: z.string().trim().min(7).max(30),
+  contact_phone: z.string().trim().max(30).refine((v) => !phoneError(v), "phone"),
   contact_relationship: z.string().trim().min(2).max(60),
 });
 

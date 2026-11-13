@@ -18,14 +18,27 @@ export async function api<T = Record<string, unknown>>(url: string, init: Reques
   return data;
 }
 
+/** Every date and time on the site is shown in Sydney time. */
+export const TZ = "Australia/Sydney";
+
+/** Calendar dates stored without a time (YYYY-MM-DD) are shown as the same calendar date everywhere. */
+const dateOnly = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+
 export const fmtDate = (s: string | null | undefined, withTime = false) =>
   s
     ? new Date(s).toLocaleString("en-GB", {
         day: "numeric",
         month: "long",
         year: "numeric",
-        ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
-      })
+        timeZone: dateOnly(s) ? "UTC" : TZ,
+        ...(withTime && !dateOnly(s) ? { hour: "2-digit", minute: "2-digit" } : {}),
+      }) + (withTime && !dateOnly(s) ? ` ${tzAbbr(s)}` : "")
     : "";
+
+/** AEDT in the southern summer, AEST otherwise. */
+function tzAbbr(s: string) {
+  const part = new Intl.DateTimeFormat("en-AU", { timeZone: TZ, timeZoneName: "short" }).formatToParts(new Date(s)).find((p) => p.type === "timeZoneName");
+  return part?.value ?? "Sydney";
+}
 
 export const fmtSize = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);

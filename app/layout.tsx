@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
-import "./premium.css";
 import { programme } from "@/lib/content";
 
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const serif = Source_Serif_4({ subsets: ["latin"], variable: "--font-serif", display: "swap", weight: ["400", "600"], style: ["normal", "italic"] });
+const sans = Source_Sans_3({ subsets: ["latin"], variable: "--font-sans", display: "swap", weight: ["400", "700"] });
+// Serif only for the University wordmark.
+const serif = Source_Serif_4({ subsets: ["latin"], variable: "--font-serif", display: "swap", weight: ["600"] });
 
 const site = process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:5330");
 
@@ -23,8 +23,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${sans.variable} ${serif.variable}`} suppressHydrationWarning>
       <body>
-        {/* Lets CSS hide scroll-reveal content only when JavaScript is running to reveal it. */}
-        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
         <a className="skip" href="#main">
           Skip to content
         </a>

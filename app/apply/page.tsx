@@ -14,16 +14,7 @@ export default async function ApplyPage() {
     <>
       <SiteHeader />
       <main id="main" className="authx">
-        <AuthSide
-          eyebrow={`${programme.name} · ${programme.cycle}`}
-          title="Begin your application"
-          body="Confirm your eligibility, then create your applicant account. You may complete the application at your own pace before the deadline."
-          points={[
-            "Progress is saved automatically on every device",
-            "Seven concise sections and two personal statements",
-            `Decisions are released by ${programme.decisions}`,
-          ]}
-        />
+        <AuthSide eyebrow={`${programme.name} · ${programme.cycle}`} title="Start your application" />
         <div className="authx-main">
           <ApplyStart />
         </div>

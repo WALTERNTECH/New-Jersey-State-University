@@ -54,11 +54,11 @@ export async function SiteHeader({ portal = false }: { portal?: boolean }) {
               </>
             )}
             {me ? (
-              <Link className="btn btn-primary btn-sm" href="/portal">
+              <Link className="btn btn-gold btn-sm" href="/portal">
                 {portal ? "Dashboard" : "Applicant portal"}
               </Link>
             ) : (
-              <Link className="btn btn-primary btn-sm" href="/apply">
+              <Link className="btn btn-gold btn-sm" href="/apply">
                 Apply
               </Link>
             )}
@@ -112,7 +112,7 @@ export function SiteFooter() {
         </div>
         <div className="bottom">
           <span>© {year} {programme.university}</span>
-          <span className="notice">We never charge applicants. Ignore any request for payment in our name.</span>
+          <span className="notice">We never charge applicants or ask for a PIN, password or card number.</span>
         </div>
       </div>
     </footer>

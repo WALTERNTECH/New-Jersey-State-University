@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/Chrome";
-import { RevealObserver } from "@/components/Motion";
 import { allowanceCategories, allowances, phaseLabels, programme, type AllowancePhase } from "@/lib/content";
 
 export const metadata = {
@@ -32,15 +31,10 @@ export default function FinancialAid() {
       <main id="main">
         <section className="pagehero">
           <div className="wrap">
-            <span className="eyebrow light anim">Financial Aid</span>
-            <h1 className="anim" style={{ animationDelay: "0.1s" }}>
-              Allowances for Access Scholars
-            </h1>
-            <p className="anim" style={{ animationDelay: "0.2s" }}>
-              In addition to full tuition, required fees, housing and dining, the {programme.name} provides a comprehensive set of allowances so that each
-              scholar can study, live and travel without financial hardship. Allowance amounts are reviewed annually.
-            </p>
-            <div className="phase-key anim" style={{ animationDelay: "0.3s" }}>
+            <span className="kicker light">Financial Aid</span>
+            <h1>Allowances for Access Scholars</h1>
+            <p>Paid by bank transfer to the account given in the application, in addition to full tuition, fees, housing and dining.</p>
+            <div className="phase-key">
               {phaseOrder.map((p) => (
                 <div key={p}>
                   <b>{phaseLabels[p].label}</b>
@@ -54,17 +48,14 @@ export default function FinancialAid() {
         {allowanceCategories.map((c) => (
           <section className="acat" key={c.id} id={c.id}>
             <div className="wrap">
-              <div className="acat-head" data-reveal>
-                <div>
-                  <h2>{c.title}</h2>
-                  <p className="muted mt8">{c.intro}</p>
-                </div>
+              <div className="acat-head">
+                <h2>{c.title}</h2>
               </div>
               <div className="acards">
                 {allowances
                   .filter((a) => a.category === c.id)
-                  .map((a, i) => (
-                    <article className="acard" key={a.slug} id={a.slug} data-reveal style={{ transitionDelay: `${i * 80}ms` }}>
+                  .map((a) => (
+                    <article className="acard" key={a.slug} id={a.slug}>
                       <span className={`phase ${a.phase}`}>{phaseLabels[a.phase].label}</span>
                       <h3>{a.title}</h3>
                       <div className="amt">
@@ -86,46 +77,42 @@ export default function FinancialAid() {
 
         <section className="section" id="how">
           <div className="wrap">
-            <div className="section-head" data-reveal>
-              <span className="eyebrow">Process</span>
-              <h2>How allowances are requested</h2>
-              <p className="lede">Allowance requests open in stages, so that support reaches admitted scholars only, at the moment it is needed.</p>
+            <div className="section-head">
+              <h2>How allowances are paid</h2>
             </div>
-            <div className="howgrid" data-reveal>
+            <div className="howgrid">
               <div>
-                <b>In the application</b>
-                <p>Candidates indicate their housing preference, whether they require the technology allowance, and whether they will need a U.S. student visa.</p>
+                <b>Apply</b>
+                <p>Housing, technology, visa needs and bank account are given in the application.</p>
               </div>
               <div>
-                <b>On admission</b>
-                <p>Once an offer of admission is accepted, the portal opens requests for travel, the settling-in grant, visa fee reimbursement and off-campus housing.</p>
+                <b>Accept your offer</b>
+                <p>Travel, settling-in, visa and off-campus housing requests open.</p>
               </div>
               <div>
-                <b>At registration</b>
-                <p>Scholars report to campus in person. The Registrar confirms enrolment and the Bursar arranges disbursement; bank details are never requested online.</p>
+                <b>Approval</b>
+                <p>The Office approves each request.</p>
               </div>
               <div>
-                <b>While enrolled</b>
-                <p>Enrolled scholars may request the summer research stipend, the study abroad allowance and emergency hardship grants at any time.</p>
+                <b>Payment</b>
+                <p>Approved allowances are paid to your bank account.</p>
               </div>
             </div>
           </div>
         </section>
 
         <section className="cta-band">
-          <div className="wrap" data-reveal>
-            <div>
-              <h2>Begin your application to the Access Scholarship.</h2>
-              <p>The application deadline is {programme.deadline} at 11:59 p.m. Eastern Time.</p>
-            </div>
-            <Link href="/apply" className="btn btn-gold">
-              Begin your application
+          <div className="wrap">
+            <h2>
+              Applications close {programme.deadline}, {programme.deadlineTime}.
+            </h2>
+            <Link href="/apply" className="btn btn-gold btn-lg">
+              Start your application
             </Link>
           </div>
         </section>
       </main>
       <SiteFooter />
-      <RevealObserver />
     </>
   );
 }

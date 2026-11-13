@@ -12,6 +12,7 @@ const Body = z.object({
   email: z.string().trim().toLowerCase().email().max(160),
   password: z.string().min(8).max(200),
   eligibility: z.object({
+    country: z.literal("yes"),
     school: z.enum(["yes", "soon"]),
     need: z.literal("yes"),
     degree: z.literal("no"),

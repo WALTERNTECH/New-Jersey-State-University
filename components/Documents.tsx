@@ -44,10 +44,9 @@ function Icon({ done }: { done: boolean }) {
   );
 }
 
-function Slot({ kind, label, hint, required, doc, locked, reviewed, onChange }: {
+function Slot({ kind, label, required, doc, locked, reviewed, onChange }: {
   kind: string;
   label: string;
-  hint: string;
   required: boolean;
   doc?: Doc;
   locked: boolean;
@@ -130,7 +129,7 @@ function Slot({ kind, label, hint, required, doc, locked, reviewed, onChange }: 
               · {fmtSize(doc.size)}
             </span>
           ) : (
-            <span className="file">{hint}</span>
+            <span className="file">Not uploaded</span>
           )}
           {review === "rejected" && doc?.review_note && <span className="rv-note">Please replace this file: {doc.review_note}</span>}
         </div>
@@ -179,7 +178,7 @@ export default function Documents({ docs, locked = false, onChange, only, set = 
           onChange={(d, kind) => onChange(d ? [...docs.filter((x) => locked || x.kind !== kind), d] : docs.filter((x) => x.kind !== kind))}
         />
       ))}
-      <p className="small muted">PDF, JPG or PNG, up to 4 MB each. A clear phone photo of a document is fine. Large photos are reduced automatically.</p>
+      <p className="small muted">PDF, JPG or PNG, up to 4 MB.</p>
     </div>
   );
 }

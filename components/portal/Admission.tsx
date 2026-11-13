@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/client";
+import PhoneInput from "@/components/PhoneInput";
 
 export function OfferReply({ replyBy }: { replyBy: string }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export function OfferReply({ replyBy }: { replyBy: string }) {
 
   return (
     <div className="stack">
-      <p className="small muted">Please reply by {replyBy}. Your reply is final once submitted.</p>
+      <p className="small">Reply by {replyBy}. Your reply is final.</p>
       <div className="c-choice" role="radiogroup" aria-label="Your reply">
         <label className={choice === "accept" ? "on" : ""}>
           <input type="radio" name="reply" checked={choice === "accept"} onChange={() => (setChoice("accept"), setConfirm(false))} />
@@ -55,7 +56,7 @@ export function OfferReply({ replyBy }: { replyBy: string }) {
       {error && <div className="alert alert-err" role="alert">{error}</div>}
       <div>
         <button className={`btn ${choice === "decline" ? "btn-ghost" : "btn-primary"}`} disabled={!choice || !confirm || busy} onClick={send}>
-          {busy ? "Submitting…" : choice === "decline" ? "Decline offer" : "Accept offer"}
+          {busy ? "Submitting" : choice === "decline" ? "Decline offer" : "Accept offer"}
         </button>
       </div>
     </div>
@@ -124,10 +125,10 @@ export function ArrivalForm({ initial }: { initial: Arrival | null }) {
         </div>
         <div className="field">
           <label htmlFor="ap">Arrival airport or station</label>
-          <input id="ap" className="input" required placeholder="e.g. Newark Liberty International (EWR)" value={v.arrival_point ?? ""} onChange={set("arrival_point")} />
+          <input id="ap" className="input" required value={v.arrival_point ?? ""} onChange={set("arrival_point")} />
         </div>
         <div className="field">
-          <label htmlFor="ac">Airline and flight number <span className="opt">If known</span></label>
+          <label htmlFor="ac">Airline and flight number <span className="opt">(optional)</span></label>
           <input id="ac" className="input" value={v.carrier ?? ""} onChange={set("carrier")} />
         </div>
         <div className="field">
@@ -136,16 +137,16 @@ export function ArrivalForm({ initial }: { initial: Arrival | null }) {
         </div>
         <div className="field">
           <label htmlFor="cr">Relationship to you</label>
-          <input id="cr" className="input" required placeholder="e.g. Mother" value={v.contact_relationship ?? ""} onChange={set("contact_relationship")} />
+          <input id="cr" className="input" required value={v.contact_relationship ?? ""} onChange={set("contact_relationship")} />
         </div>
         <div className="field full">
           <label htmlFor="cp">Emergency contact telephone</label>
-          <input id="cp" className="input" type="tel" required placeholder="Include the country code" value={v.contact_phone ?? ""} onChange={set("contact_phone")} />
+          <PhoneInput id="cp" value={v.contact_phone ?? ""} onChange={(p) => setV((x) => ({ ...x, contact_phone: p }))} />
         </div>
       </div>
       {msg && <div className={`alert ${msg.ok ? "alert-ok" : "alert-err"}`} role="status">{msg.text}</div>}
       <div className="flex">
-        <button className="btn btn-primary btn-sm" disabled={busy}>{busy ? "Saving…" : "Save arrival plan"}</button>
+        <button className="btn btn-primary btn-sm" disabled={busy}>{busy ? "Saving" : "Save arrival plan"}</button>
         {initial && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>Cancel</button>}
       </div>
     </form>

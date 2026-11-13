@@ -32,7 +32,6 @@ export default function SignInForm({ next, emailReset }: { next: string; emailRe
   return (
     <div className="card">
       <h2>Sign in</h2>
-      <p className="sub">Use the email address and password associated with your application.</p>
       {error && (
         <div className="alert alert-err mt16" role="alert">
           {error}
@@ -70,24 +69,22 @@ export default function SignInForm({ next, emailReset }: { next: string; emailRe
               {show ? "Hide" : "Show"}
             </button>
           </div>
-          {caps && <span className="capslock">⇪ Caps Lock is on</span>}
+          {caps && <span className="capslock">Caps Lock is on</span>}
         </div>
         {forgot && (
           <div className="alert alert-info" role="status">
             <span>
-              Please write to the Office of Admissions{programme.contactEmail ? <> at <a href={`mailto:${programme.contactEmail}`}>{programme.contactEmail}</a></> : ""} from
-              the email address on your application, giving your full name and application reference. Once your identity has been verified, you will be issued
-              a temporary password, which you will be asked to replace when you next sign in.
+              Contact the Office of Admissions{programme.contactEmail ? <> at <a href={`mailto:${programme.contactEmail}`}>{programme.contactEmail}</a></> : ""} to reset your password.
             </span>
           </div>
         )}
         <button className="btn btn-primary btn-block" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? "Signing in" : "Sign in"}
         </button>
       </form>
-      <div className="divider mt24">New to the Access Scholarship?</div>
+      <div className="divider mt24">or</div>
       <Link className="btn btn-ghost btn-block mt16" href="/apply">
-        Begin an application
+        Start an application
       </Link>
     </div>
   );

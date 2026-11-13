@@ -4,6 +4,7 @@ import { badOrigin, fail } from "@/lib/auth";
 import { audit, requireStaffApi } from "@/lib/staff";
 import { allowanceBySlug } from "@/lib/content";
 import { sendEmail } from "@/lib/email";
+import { masked, paymentSummary } from "@/lib/payment";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -13,7 +14,7 @@ const moves: Record<string, { from: string[]; to: string }> = {
   disburse: { from: ["approved"], to: "disbursed" },
 };
 
-/** The chair or owner decides an allowance request, and records disbursement once paid by the Bursar. */
+/** The chair or owner decides an allowance request, and records the bank transfer once it is paid. */
 export async function POST(req: Request, { params }: Ctx) {
   if (badOrigin(req)) return fail(403, "Request blocked");
   const me = await requireStaffApi({ decide: true });
@@ -26,24 +27,27 @@ export async function POST(req: Request, { params }: Ctx) {
   if (m.to === "declined" && !note) return fail(400, "Please give the scholar a reason");
   const q = await db();
   if (!/^[0-9a-f-]{36}$/i.test(id)) return fail(404, "Not found");
-  const { rows } = await q.query<{ slug: string; reference: string; status: string; data: Record<string, string>; email: string; applicant_id: string; first_name: string }>(
-    `select r.slug, r.status, a.reference, a.data, p.email, p.id as applicant_id, p.first_name
+  const { rows } = await q.query<{ slug: string; reference: string; status: string; data: Record<string, string>; email: string; applicant_id: string; first_name: string; application_id: string }>(
+    `select r.slug, r.status, r.application_id, a.reference, a.data, p.email, p.id as applicant_id, p.first_name
      from allowance_requests r join applications a on a.id = r.application_id join applicants p on p.id = a.applicant_id where r.id = $1`,
     [id],
   );
   const r = rows[0];
   if (!r) return fail(404, "Not found");
   if (!m.from.includes(r.status)) return fail(409, `A request that is ${r.status} can't be changed that way`);
+  // Every payment goes to the account in the scholar's payment details, and the request records which one.
+  const account = masked(await paymentSummary(r.application_id));
+  if (m.to === "disbursed" && !account) return fail(409, "This scholar has no payment details on file. Ask them to add a bank account in the portal first.");
   await q.query(
-    "update allowance_requests set status = $2, decision_note = coalesce($3, decision_note), decided_by = $4, decided_at = now(), updated_at = now() where id = $1",
-    [id, m.to, note, me.id],
+    "update allowance_requests set status = $2, decision_note = coalesce($3, decision_note), decided_by = $4, decided_at = now(), updated_at = now(), paid_to = case when $2 = 'disbursed' then $5 else paid_to end where id = $1",
+    [id, m.to, note, me.id, account],
   );
   await audit(me.id, `allowance_${m.to}`, r.reference, `${r.slug}${note ? ` · ${note}` : ""}`);
   await sendEmail({
     kind: "allowance",
     to: r.email,
     applicantId: r.applicant_id,
-    params: { name: (r.data.preferred_name || r.data.first_name || r.first_name).trim(), reference: r.reference, allowance: allowanceBySlug(r.slug)?.title ?? r.slug, status: m.to, note: note ?? "" },
+    params: { name: (r.data.preferred_name || r.data.first_name || r.first_name).trim(), reference: r.reference, allowance: allowanceBySlug(r.slug)?.title ?? r.slug, status: m.to, note: note ?? "", account },
   });
   return NextResponse.json({ ok: true, status: m.to });
 }

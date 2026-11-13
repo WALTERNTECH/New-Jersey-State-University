@@ -5,6 +5,7 @@ import { requireApplicant } from "@/lib/auth";
 import { applicationFor } from "@/lib/application";
 import { canRequest, requestsFor, requestStatusLabels } from "@/lib/allowances";
 import { allowanceCategories, allowances, phaseLabels } from "@/lib/content";
+import { LockIcon } from "@/components/Icons";
 
 export const metadata = { title: "Allowances", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -24,8 +25,8 @@ export default async function PortalAllowances() {
         <div className="portalbar">
           <div className="wrap">
             <div>
-              <span className="eyebrow">Financial Aid</span>
-              <h1 className="mt8">Your allowances</h1>
+              <span className="kicker">Financial Aid</span>
+              <h1>Your allowances</h1>
             </div>
             <Link className="btn btn-ghost btn-sm" href="/portal">Back to dashboard</Link>
           </div>
@@ -81,7 +82,7 @@ export default async function PortalAllowances() {
                               {mine.length ? "Make another request" : "Request"}
                             </Link>
                           ) : (
-                            <span className="lock">🔒 {allowed.reason}</span>
+                            <span className="lock"><LockIcon /> {allowed.reason}</span>
                           )}
                         </div>
                       </article>

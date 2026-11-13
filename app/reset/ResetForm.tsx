@@ -33,7 +33,6 @@ export default function ResetForm({ token }: { token: string }) {
   return (
     <div className="card">
       <h2>Choose a new password</h2>
-      <p className="sub">Use at least 8 characters.</p>
       {error && (
         <div className="alert alert-err mt16" role="alert">
           <span>
@@ -68,7 +67,7 @@ export default function ResetForm({ token }: { token: string }) {
           <label htmlFor="np2">Confirm new password</label>
           <input id="np2" className="input" type={show ? "text" : "password"} autoComplete="new-password" minLength={8} required value={pw2} onChange={(e) => setPw2(e.target.value)} />
         </div>
-        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? "Saving…" : "Save new password"}</button>
+        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? "Saving" : "Save new password"}</button>
       </form>
     </div>
   );

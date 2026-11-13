@@ -16,8 +16,7 @@ export default function ForgotForm({ enabled, contactEmail }: { enabled: boolean
         <h2>Reset your password</h2>
         <div className="alert alert-info mt16" role="status">
           <span>
-            Please write to the Office of Admissions{contactEmail ? <> at <a href={`mailto:${contactEmail}`}>{contactEmail}</a></> : ""} from the email address on your
-            application, giving your full name and application reference. Once your identity has been verified, you will be issued a temporary password.
+            Contact the Office of Admissions{contactEmail ? <> at <a href={`mailto:${contactEmail}`}>{contactEmail}</a></> : ""} to reset your password.
           </span>
         </div>
         <Link className="btn btn-ghost btn-block mt24" href="/signin">Return to sign in</Link>
@@ -29,8 +28,7 @@ export default function ForgotForm({ enabled, contactEmail }: { enabled: boolean
       <div className="card">
         <h2>Check your email</h2>
         <p className="sub">
-          If an application exists for <b>{email}</b>, we have sent it a link to choose a new password. The link expires in 30 minutes. Please check your spam folder if it
-          does not arrive within a few minutes.
+          If an application exists for <b>{email}</b>, a reset link has been sent to it. The link expires in 30 minutes.
         </p>
         <Link className="btn btn-ghost btn-block mt24" href="/signin">Return to sign in</Link>
       </div>
@@ -39,7 +37,6 @@ export default function ForgotForm({ enabled, contactEmail }: { enabled: boolean
   return (
     <div className="card">
       <h2>Reset your password</h2>
-      <p className="sub">We will email you a link to choose a new password.</p>
       {error && <div className="alert alert-err mt16" role="alert">{error}</div>}
       <form
         onSubmit={async (e) => {
@@ -60,7 +57,7 @@ export default function ForgotForm({ enabled, contactEmail }: { enabled: boolean
           <label htmlFor="em">Email address</label>
           <input id="em" className="input" type="email" autoComplete="email" inputMode="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
-        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? "Sending…" : "Send reset link"}</button>
+        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? "Sending" : "Send reset link"}</button>
       </form>
       <Link className="btn btn-ghost btn-block mt16" href="/signin">Return to sign in</Link>
     </div>

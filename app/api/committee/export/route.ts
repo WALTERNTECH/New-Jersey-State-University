@@ -22,7 +22,8 @@ export async function GET() {
      from applications a join applicants p on p.id = a.applicant_id
      where a.status <> 'draft' order by a.submitted_at`,
   );
-  const fields = steps.flatMap((s) => s.fields).filter((f) => !f.name.startsWith("essay_"));
+  // Bank details never leave the console in an export.
+  const fields = steps.filter((s) => !s.secure).flatMap((s) => s.fields).filter((f) => !f.name.startsWith("essay_"));
   const header = ["Reference", "Status", "Submitted", "Email", ...fields.map((f) => f.label), "Average score /20", "Scores"];
   const lines = [header.map(cell).join(",")];
   for (const r of rows) {

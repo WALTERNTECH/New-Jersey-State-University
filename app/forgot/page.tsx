@@ -15,8 +15,6 @@ export default function ForgotPage() {
         <AuthSide
           eyebrow="Applicant portal"
           title="Reset your password"
-          body="Enter the email address on your application and we will send you a link to choose a new password."
-          points={["The link works once", "It expires after 30 minutes", "Your application is unaffected"]}
         />
         <div className="authx-main">
           <ForgotForm enabled={emailConfigured()} contactEmail={programme.contactEmail} />

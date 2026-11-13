@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/Chrome";
 import { requireApplicant } from "@/lib/auth";
 import { applicationFor, documentsFor } from "@/lib/application";
+import { paymentFor } from "@/lib/payment";
 import Wizard from "./Wizard";
 
 export const metadata = { title: "Your application", robots: { index: false } };
@@ -12,13 +13,13 @@ export default async function ApplicationPage({ searchParams }: { searchParams: 
   const app = await applicationFor(me.id);
   if (!app) redirect("/apply");
   if (app.status !== "draft") redirect("/portal");
-  const docs = await documentsFor(app.id);
+  const [docs, payment] = await Promise.all([documentsFor(app.id), paymentFor(app.id)]);
   const { step } = await searchParams;
   return (
     <>
       <SiteHeader portal />
       <main id="main">
-        <Wizard initial={app.data} initialDocs={docs} email={me.email} reference={app.reference} firstStep={step ?? "personal"} />
+        <Wizard initial={app.data} initialPayment={payment ?? {}} initialDocs={docs} email={me.email} reference={app.reference} firstStep={step ?? "personal"} />
       </main>
     </>
   );

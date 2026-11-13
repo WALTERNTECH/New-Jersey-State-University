@@ -12,7 +12,10 @@ export const programme = {
   startTerm: "Fall 2027",
   opens: "9 November 2026",
   deadline: "15 March 2027",
-  deadlineISO: "2027-03-15T23:59:59-05:00",
+  // Sydney is on daylight time (AEDT, UTC+11) until 4 April 2027.
+  deadlineISO: "2027-03-15T23:59:59+11:00",
+  deadlineTime: "11:59 p.m. Sydney time (AEDT)",
+  timeZone: "Australia/Sydney",
   interviews: "April 2027",
   decisions: "15 May 2027",
   replyBy: "1 June 2027",
@@ -41,7 +44,20 @@ export const pillars = [
   },
 ];
 
+/** The scholarship is open to citizens and residents of these countries only. Dial codes drive the phone fields. */
+export const eligibleCountries = [
+  { name: "Australia", dial: "+61", digits: [9] },
+  { name: "Egypt", dial: "+20", digits: [10] },
+  { name: "Kenya", dial: "+254", digits: [9] },
+  { name: "Nigeria", dial: "+234", digits: [10] },
+  { name: "Singapore", dial: "+65", digits: [8] },
+  { name: "Uganda", dial: "+256", digits: [9] },
+] as const;
+export const countryNames = eligibleCountries.map((c) => c.name);
+export const countryList = "Australia, Singapore, Kenya, Nigeria, Egypt and Uganda";
+
 export const eligibility = [
+  `Citizenship or residence in ${countryList}.`,
   "Completion of secondary school, or expected completion before the start of the academic year.",
   "Demonstrated financial need: the applicant’s family is unable to meet the cost of a university education.",
   "No previously conferred bachelor’s degree.",
@@ -50,11 +66,11 @@ export const eligibility = [
 ];
 
 export const timeline = [
-  { when: programme.opens, title: "Application opens", body: "Candidates may create an account and begin the application. Progress is saved automatically." },
-  { when: programme.deadline, title: "Application deadline", body: "Applications must be submitted by 11:59 p.m. Eastern Time. Supplementary documents may follow within 14 days." },
-  { when: programme.interviews, title: "Interviews", body: "Shortlisted candidates are invited to a 30-minute conversation with members of the Scholarship Committee." },
-  { when: programme.decisions, title: "Admission decisions", body: "All candidates are notified of their decision through the applicant portal and by email." },
-  { when: programme.startTerm, title: "Matriculation", body: `Admitted scholars report to campus in ${programme.arrival} for orientation and registration.` },
+  { when: programme.opens, title: "Application opens", body: "Accounts and applications open." },
+  { when: programme.deadline, title: "Application deadline", body: `Applications close at ${programme.deadlineTime}.` },
+  { when: programme.interviews, title: "Interviews", body: "Shortlisted candidates are interviewed by the Scholarship Committee." },
+  { when: programme.decisions, title: "Admission decisions", body: "Decisions are released in the applicant portal and by email." },
+  { when: programme.startTerm, title: "Matriculation", body: `Admitted scholars report to campus in ${programme.arrival}.` },
 ];
 
 export const faqs = [
@@ -67,8 +83,8 @@ export const faqs = [
     a: "The award is renewed each academic year for up to eight semesters, provided the scholar remains enrolled full-time and in good academic standing.",
   },
   {
-    q: "May international students apply?",
-    a: "Yes. The Access Scholarship is open to candidates of every nationality who meet the eligibility criteria. International scholars receive additional support for travel and immigration costs.",
+    q: "Which countries are eligible?",
+    a: `The Access Scholarship is open to citizens and residents of ${countryList}. Scholars receive additional support for travel and immigration costs.`,
   },
   {
     q: "Which documents are required?",
@@ -85,6 +101,10 @@ export const faqs = [
   {
     q: "How will I hear about my application?",
     a: "Every stage is shown in the applicant portal and confirmed by email. Admitted candidates receive their letter of admission by email and can download it from the portal at any time.",
+  },
+  {
+    q: "How are allowances paid?",
+    a: "Approved allowances are paid by bank transfer to the account given in the Payment details section of the application. The University never asks for a PIN, a password or a card number, and never charges applicants.",
   },
 ];
 
@@ -130,7 +150,7 @@ export interface Allowance {
   phase: AllowancePhase;
   who?: string;
   fields?: AllowanceField[];
-  documents?: { key: string; label: string; hint: string; required: boolean }[];
+  documents?: { key: string; label: string; hint?: string; required: boolean }[];
 }
 
 export const allowanceCategories = [
@@ -185,8 +205,8 @@ export const allowances: Allowance[] = [
       { name: "landlord", label: "Landlord or agent name and contact", type: "text", required: true },
     ],
     documents: [
-      { key: "lease", label: "Signed lease agreement", hint: "All pages, signed by both parties.", required: true },
-      { key: "utilities", label: "Utility estimate or bill", hint: "If utilities are not included in the rent.", required: false },
+      { key: "lease", label: "Signed lease agreement", required: true },
+      { key: "utilities", label: "Utility estimate or bill", required: false },
     ],
   },
   {
@@ -200,7 +220,7 @@ export const allowances: Allowance[] = [
     who: "All first-year scholars.",
     fields: [
       { name: "arrival_date", label: "Expected arrival date", type: "date", required: true },
-      { name: "needs", label: "Principal items you need on arrival", type: "textarea", required: true, hint: "For example: winter coat and boots, bedding, a desk lamp." },
+      { name: "needs", label: "Principal items you need on arrival", type: "textarea", required: true },
     ],
   },
   {
@@ -217,9 +237,9 @@ export const allowances: Allowance[] = [
       { name: "from_city", label: "Departing from (city and country)", type: "text", required: true },
       { name: "from_airport", label: "Nearest international airport", type: "text", required: true },
       { name: "travel_date", label: "Preferred travel date", type: "date", required: true },
-      { name: "notes", label: "Anything the travel office should know", type: "textarea", hint: "Optional. For example, accessibility needs." },
+      { name: "notes", label: "Anything the travel office should know", type: "textarea" },
     ],
-    documents: [{ key: "passport", label: "Passport biographical page", hint: "So the ticket matches your passport exactly.", required: true }],
+    documents: [{ key: "passport", label: "Passport biographical page", required: true }],
   },
   {
     slug: "health",
@@ -245,9 +265,9 @@ export const allowances: Allowance[] = [
       { name: "amount_paid", label: "Total paid in fees (US dollars)", type: "number", required: true, max: 800 },
     ],
     documents: [
-      { key: "mrv_receipt", label: "Visa application fee (MRV) receipt", hint: "The official receipt from the U.S. Department of State payment service.", required: true },
-      { key: "sevis_receipt", label: "SEVIS I-901 payment confirmation", hint: "Printed from fmjfee.com.", required: true },
-      { key: "medical_receipt", label: "Medical screening receipt", hint: "If a medical examination was required.", required: false },
+      { key: "mrv_receipt", label: "Visa application fee (MRV) receipt", required: true },
+      { key: "sevis_receipt", label: "SEVIS I-901 payment confirmation", required: true },
+      { key: "medical_receipt", label: "Medical screening receipt", required: false },
     ],
   },
   {
@@ -268,7 +288,7 @@ export const allowances: Allowance[] = [
       { name: "end", label: "End date", type: "date", required: true },
       { name: "description", label: "Description of the work and its purpose", type: "textarea", required: true },
     ],
-    documents: [{ key: "offer", label: "Offer or confirmation letter", hint: "From the host laboratory or organisation.", required: true }],
+    documents: [{ key: "offer", label: "Offer or confirmation letter", required: true }],
   },
   {
     slug: "study-abroad",
@@ -285,7 +305,7 @@ export const allowances: Allowance[] = [
       { name: "term", label: "Term abroad", type: "select", required: true, options: ["Fall", "Spring", "Full academic year"] },
       { name: "approval_ref", label: "Study abroad approval reference", type: "text", required: true },
     ],
-    documents: [{ key: "acceptance", label: "Host university acceptance letter", hint: "Or the exchange placement confirmation.", required: true }],
+    documents: [{ key: "acceptance", label: "Host university acceptance letter", required: true }],
   },
   {
     slug: "emergency",
@@ -301,7 +321,7 @@ export const allowances: Allowance[] = [
       { name: "amount", label: "Amount requested (US dollars)", type: "number", required: true, max: 2000 },
       { name: "description", label: "Describe the circumstances", type: "textarea", required: true },
     ],
-    documents: [{ key: "evidence", label: "Supporting evidence", hint: "For example, a medical bill, quotation or police report.", required: true }],
+    documents: [{ key: "evidence", label: "Supporting evidence", required: true }],
   },
 ];
 

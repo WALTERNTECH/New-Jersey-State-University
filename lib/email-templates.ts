@@ -20,7 +20,9 @@ export type EmailKind =
   | "office_document"
   | "office_arrival"
   | "office_allowance"
-  | "office_cleared";
+  | "office_cleared"
+  | "payment_changed"
+  | "office_payment";
 
 /** Alerts to the Office's own inbox, as opposed to messages to applicants. */
 export const isOfficeKind = (k: string) => k.startsWith("office_");
@@ -44,6 +46,8 @@ export const emailKindLabels: Record<string, string> = {
   office_arrival: "Office alert: arrival plan",
   office_allowance: "Office alert: allowance request",
   office_cleared: "Office alert: cleared to report",
+  payment_changed: "Payment details changed",
+  office_payment: "Office alert: payment details changed",
 };
 
 export type Params = Record<string, string>;
@@ -70,7 +74,7 @@ function content(kind: string, p: Params): Content {
         heading: `Welcome, ${name}`,
         paras: [
           `Your applicant account for the ${programme.name} has been created. Your application reference is ${p.reference}; please quote it in any correspondence with the Office.`,
-          `Your application saves as you go, so you may complete it over several sessions and from any device. Applications close on ${programme.deadline} at 11:59 p.m. Eastern Time.`,
+          `Your application saves as you go, so you may complete it over several sessions and from any device. Applications close on ${programme.deadline} at ${programme.deadlineTime}.`,
         ],
         button: { label: "Continue your application", path: "/portal" },
         after: ["If you did not create this account, you may disregard this message."],
@@ -205,7 +209,7 @@ function content(kind: string, p: Params): Content {
       };
     case "allowance": {
       const verdict =
-        p.status === "approved" ? "has been approved" : p.status === "disbursed" ? "has been disbursed" : "could not be approved";
+        p.status === "approved" ? "has been approved" : p.status === "disbursed" ? "has been paid" : "could not be approved";
       return {
         subject: `Your ${p.allowance} request`,
         preheader: `Your request ${verdict}.`,
@@ -214,10 +218,10 @@ function content(kind: string, p: Params): Content {
           `Dear ${name},`,
           `Your request for the ${p.allowance} ${verdict}.${p.note ? ` ${p.status === "declined" ? "Reason" : "Note from the Office"}: ${p.note}` : ""}`,
           p.status === "approved"
-            ? "The Office of the Bursar will arrange payment in person. The University never asks for bank or card details by email or online."
+            ? `Payment will be made by bank transfer to ${p.account || "the account in your application"}.`
             : p.status === "declined"
               ? "You may submit a new request in the portal if your circumstances change."
-              : "Thank you. No further action is required.",
+              : `The payment was sent by bank transfer to ${p.account || "the account in your application"}.`,
         ],
         button: { label: "View your requests", path: "/portal/allowances" },
       };
@@ -295,6 +299,26 @@ function content(kind: string, p: Params): Content {
         paras: [`${p.name}'s identification documents are verified and their arrival plan is in, so they have been cleared to report and told by email. Confirm their enrolment when they arrive.`],
         button: { label: "Arrivals", path: "/committee/arrivals?view=accepted" },
       };
+    case "payment_changed":
+      return {
+        subject: "Your payment details were changed",
+        preheader: "The bank account for your allowances was updated.",
+        heading: "Your payment details were changed",
+        paras: [
+          `Dear ${name},`,
+          `The bank account for your allowance payments is now ${p.account}.`,
+          "If you did not make this change, contact the Office of Admissions immediately.",
+        ],
+        button: { label: "Open the portal", path: "/portal" },
+      };
+    case "office_payment":
+      return {
+        subject: `[NJSU] Payment details changed: ${p.name} (${p.reference})`,
+        preheader: `${p.name} updated their bank account.`,
+        heading: "Payment details changed",
+        paras: [`${p.name} (${p.reference}) changed the bank account for allowance payments to ${p.account}.`],
+        button: { label: "Open the application", path: `/committee/applications/${p.app_id}` },
+      };
     default:
       return { subject: "A message from NJSU Admissions", preheader: "", heading: "A message from NJSU Admissions", paras: [] };
   }
@@ -306,7 +330,7 @@ export function renderEmail(kind: string, p: Params, site: string) {
   const office = isOfficeKind(kind);
   const foot = office
     ? ["Alert from the NJSU Access Scholarship portal to the Office of Admissions.", "Sign in to the committee console to act on it."]
-    : [programme.office, programme.university, "We never charge applicants. Ignore any request for payment in our name."];
+    : [programme.office, programme.university, "We never charge applicants or ask for a PIN, password or card number."];
   const P = (s: string) => `<p style="margin:0 0 16px">${esc(s)}</p>`;
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(c.subject)}</title></head>

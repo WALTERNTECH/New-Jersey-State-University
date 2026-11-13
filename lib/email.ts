@@ -45,14 +45,21 @@ export async function sendEmail(s: Send): Promise<string | null> {
   }
 }
 
-/** The Office's own inbox for alerts: OFFICE_EMAIL, or failing that the reply-to address. */
-export const officeEmail = () => process.env.OFFICE_EMAIL?.trim() || process.env.EMAIL_REPLY_TO?.trim() || "";
+/**
+ * The Office's inboxes for alerts: OFFICE_EMAIL, or failing that the reply-to address. OFFICE_EMAIL may
+ * list several addresses separated by commas, for example the admissions mailbox and a phone's Gmail,
+ * which notifies instantly where a mailbox added to a phone app is only checked every few minutes.
+ */
+export const officeEmails = () =>
+  (process.env.OFFICE_EMAIL?.trim() || process.env.EMAIL_REPLY_TO?.trim() || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+export const officeEmail = () => officeEmails().join(", ");
 
 /** Tells the Office about something that happened, in its own inbox. Does nothing if no office address is set. */
 export async function alertOffice(kind: EmailKind, params: Params) {
-  const to = officeEmail();
-  if (!to) return null;
-  return sendEmail({ kind, to, applicantId: null, params });
+  for (const to of officeEmails()) await sendEmail({ kind, to, applicantId: null, params });
 }
 
 /** Sends a logged email again, for example once Resend has been connected. */

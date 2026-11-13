@@ -12,12 +12,15 @@ import { requestStatusLabels } from "@/lib/allowances";
 import { letterFor, letterIsCurrent } from "@/lib/letter";
 import { emailKindLabels } from "@/lib/email-templates";
 import { DocReview, ResendLetter } from "@/components/committee/Workflow";
+import { RevealPayment } from "@/components/committee/RevealPayment";
+import { masked, paymentSummary } from "@/lib/payment";
 
 export const metadata = { title: "Application" };
 const mailLabels: Record<string, string> = { sent: "Sent", skipped: "Not sent", failed: "Failed", queued: "Sending" };
 export const dynamic = "force-dynamic";
 
 const eligibilityText: Record<string, Record<string, string>> = {
+  country: { yes: "Citizen or resident of an eligible country" },
   school: { yes: "Completed secondary school", soon: "Finishing secondary school this year" },
   need: { yes: "Needs financial support" },
   degree: { no: "No previous bachelor's degree" },
@@ -73,6 +76,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
   const latestId = (kind: string) => [...idDocs].reverse().find((x) => x.kind === kind);
   const showId = ["accepted", "enrolled"].includes(app.status) || idDocs.length > 0;
   const hasLetter = letterIsCurrent(letter);
+  const pay = await paymentSummary(id);
   const extraDocs = docs.rows.filter((x) => !documentKinds.some((k) => k.kind === x.kind));
   if (!lastView.rows.length) await q.query("insert into audit (staff_id, action, target) values ($1, 'view_application', $2)", [me.id, app.reference]);
 
@@ -212,6 +216,17 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
 
           <section className="c-card">
             <div className="c-card-h">
+              <h2>Payment details</h2>
+              <span className="muted">{pay ? `Updated ${when(pay.updated_at)}` : ""}</span>
+            </div>
+            <div className="c-card-b stack" style={{ gap: 10 }}>
+              <b>{pay ? `${masked(pay)} · ${pay.country ?? ""}` : "Not provided yet"}</b>
+              {pay && <RevealPayment appId={app.id} canReveal={canDecide(me)} />}
+            </div>
+          </section>
+
+          <section className="c-card">
+            <div className="c-card-h">
               <h2>At a glance</h2>
               <span className="muted">{app.submitted_at ? `Submitted ${fmtDate(app.submitted_at, true)}` : `Started ${fmtDate(app.created_at)}`}</span>
             </div>
@@ -284,7 +299,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
             ))}
           </section>
 
-          {steps.filter((s) => s.id !== "essays").map((s) => (
+          {steps.filter((s) => s.id !== "essays" && !s.secure).map((s) => (
             <section className="c-card" key={s.id}>
               <div className="c-card-h"><h2>{s.title}</h2></div>
               <dl className="c-dl">

@@ -4,11 +4,22 @@ import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/client";
 import { isEmail } from "@/lib/form";
+import { countryList } from "@/lib/content";
 
 type Answer = "yes" | "no" | "soon";
-type Key = "school" | "need" | "degree" | "age";
+type Key = "country" | "school" | "need" | "degree" | "age";
 
 const questions: { key: Key; text: string; options: { v: Answer; label: string }[]; pass: Answer[]; why: string }[] = [
+  {
+    key: "country",
+    text: `Are you a citizen or resident of ${countryList.replace(" and ", " or ")}?`,
+    options: [
+      { v: "yes", label: "Yes" },
+      { v: "no", label: "No" },
+    ],
+    pass: ["yes"],
+    why: `The Access Scholarship is open only to citizens and residents of ${countryList}.`,
+  },
   {
     key: "school",
     text: "Have you completed secondary school?",
@@ -51,15 +62,6 @@ const questions: { key: Key; text: string; options: { v: Answer; label: string }
     why: "Scholars must be at least 16 years of age at matriculation.",
   },
 ];
-
-function strength(p: string) {
-  let s = 0;
-  if (p.length >= 8) s++;
-  if (p.length >= 12) s++;
-  if (/[A-Z]/.test(p) && /[a-z]/.test(p)) s++;
-  if (/\d/.test(p) || /[^\w]/.test(p)) s++;
-  return s;
-}
 
 export default function ApplyStart() {
   const [answers, setAnswers] = useState<Partial<Record<Key, Answer>>>({});
@@ -105,13 +107,8 @@ export default function ApplyStart() {
   if (stage === "check") {
     return (
       <div className="card">
-        <div className="stepper">
-          <i className="on" />
-          <i />
-          <span>Step 1 of 2 · Eligibility</span>
-        </div>
-        <h2>Confirm your eligibility</h2>
-        <p className="sub">Four brief questions. Your answers are recorded with your application.</p>
+        <p className="stepper">Step 1 of 2</p>
+        <h2>Eligibility</h2>
         <div className="mt24">
           {questions.map((q) => (
             <div className="q" key={q.key} role="group" aria-label={q.text}>
@@ -129,39 +126,30 @@ export default function ApplyStart() {
         {failed.length > 0 ? (
           <div className="alert alert-info mt24" role="status">
             <div>
-              <b>You may not be eligible for the Access Scholarship.</b>
-              <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+              <b>You are not eligible for the Access Scholarship.</b>
+              <ul>
                 {failed.map((q) => (
                   <li key={q.key}>{q.why}</li>
                 ))}
               </ul>
-              <p className="mt8">
-                Should your circumstances change, you are welcome to return. <Link href="/#faq">Frequently asked questions</Link>.
-              </p>
             </div>
           </div>
         ) : (
           <button className="btn btn-primary btn-block mt24" disabled={!answered} onClick={() => setStage("account")}>
-            {answered ? "Continue to create your account" : "Please answer all four questions"}
+            {answered ? "Continue" : "Answer every question to continue"}
           </button>
         )}
-        <p className="small muted center mt16">
-          Already begun an application? <Link href="/signin">Sign in</Link>
+        <p className="small center mt16">
+          <Link href="/signin">Sign in to an existing application</Link>
         </p>
       </div>
     );
   }
 
-  const s = strength(form.password);
   return (
     <div className="card">
-      <div className="stepper">
-        <i className="on" />
-        <i className="on" />
-        <span>Step 2 of 2 · Your account</span>
-      </div>
-      <h2>Create your applicant account</h2>
-      <p className="sub">Your account gives you access to your application, the status of the review and your admission decision.</p>
+      <p className="stepper">Step 2 of 2</p>
+      <h2>Create your account</h2>
       {error && (
         <div className="alert alert-err mt16" role="alert">
           {error}
@@ -183,7 +171,7 @@ export default function ApplyStart() {
         <div className="field">
           <label htmlFor="em">Email address</label>
           <input id="em" className="input" type="email" autoComplete="email" inputMode="email" value={form.email} onChange={set("email")} aria-invalid={!!errors.email} />
-          {errors.email ? (
+          {errors.email && (
             <span className="error">
               {errors.email}
               {errors.email.includes("already") && (
@@ -193,12 +181,10 @@ export default function ApplyStart() {
                 </>
               )}
             </span>
-          ) : (
-            <span className="hint">Use an address you check regularly; all correspondence is sent here.</span>
           )}
         </div>
         <div className="field">
-          <label htmlFor="pw">Create a password</label>
+          <label htmlFor="pw">Password</label>
           <div className="pw">
             <input
               id="pw"
@@ -208,29 +194,20 @@ export default function ApplyStart() {
               value={form.password}
               onChange={set("password")}
               aria-invalid={!!errors.password}
-              aria-describedby="pwhint"
             />
             <button type="button" onClick={() => setShow((v) => !v)} aria-label={show ? "Hide password" : "Show password"}>
               {show ? "Hide" : "Show"}
             </button>
           </div>
-          <div className="meter" aria-hidden>
-            {[0, 1, 2, 3].map((i) => (
-              <i key={i} className={i < s ? "on" : ""} />
-            ))}
-          </div>
-          {errors.password ? <span className="error">{errors.password}</span> : <span className="hint" id="pwhint">At least 8 characters.</span>}
+          {errors.password && <span className="error">{errors.password}</span>}
         </div>
         <label className="check small">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          <span>
-            I understand that the information I provide will be used by New Jersey State University to assess my application and, if I am admitted, to
-            administer my award.
-          </span>
+          <span>I agree that New Jersey State University may use this information to assess my application and administer my award.</span>
         </label>
         {errors.consent && <span className="error">{errors.consent}</span>}
         <button className="btn btn-primary btn-block" disabled={busy}>
-          {busy ? "Creating your account…" : "Create account and begin"}
+          {busy ? "Creating your account" : "Create account"}
         </button>
         <button type="button" className="textlink small" onClick={() => setStage("check")} style={{ justifySelf: "center" }}>
           Back to eligibility

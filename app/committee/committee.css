@@ -1,4 +1,4 @@
-/* Committee console. Light paper with a fine dot grid and film grain; white hairline cards above it;
+/* Committee console. Flat and solid like the public site: light grey page, white bordered cards,
    navy for actions and "you are here", gold as the accent. Desktop gets a sidebar with dropdown groups,
    phones get the same menu as a drawer, tables as cards and dialogs as bottom sheets. */
 
@@ -303,3 +303,17 @@
 @media (min-width: 761px) { .c-card:has(> .c-table) { overflow-x: auto; } }
 .c-bulk .btn-primary { background: var(--gold); border-color: var(--gold); color: var(--navy); }
 .c-bulk .btn-primary:hover { background: #f3c937; }
+
+
+/* ---------- Flat, solid finish (matches the public site) ---------- */
+.cmt { background: var(--bg); font-size: 15px; }
+.cmt::before, .cmt::after { display: none; }
+.cmt h1, .cmt h2, .cmt h3 { font-weight: 700; letter-spacing: 0; }
+.c-side { background: #fff; backdrop-filter: none; }
+.c-top { background: #fff; backdrop-filter: none; }
+.c-card, .c-dialog .sheet, .c-opts label, .c-qr, .c-once, .c-bulk, .c-banner { border-radius: 0; box-shadow: none; }
+.c-dialog .sheet { border: 1px solid var(--line); }
+.c-st, .c-mail, .c-count, .c-rv { border-radius: 2px; }
+.c-st::before { display: none; }
+.c-search input:focus { box-shadow: none; outline: 4px solid var(--gold); }
+.c-avatar { border-radius: 0; }

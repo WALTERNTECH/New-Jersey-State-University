@@ -19,12 +19,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
     <>
       <SiteHeader />
       <main id="main" className="authx">
-        <AuthSide
-          eyebrow="Applicant portal"
-          title="Welcome back"
-          body={`Sign in to continue your application, follow the Committee’s review, or manage your ${programme.name} as an admitted scholar.`}
-          points={["Your progress is saved automatically", "Follow each stage of the review", "Reply to your offer and request allowances"]}
-        />
+        <AuthSide eyebrow={programme.name} title="Applicant portal" />
         <div className="authx-main">
           <SignInForm next={next} emailReset={emailConfigured()} />
         </div>
