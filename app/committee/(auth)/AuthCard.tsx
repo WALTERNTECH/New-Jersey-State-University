@@ -1,3 +1,5 @@
+import { programme } from "@/lib/content";
+
 export default function AuthCard({ title, sub, children }: { title: string; sub: React.ReactNode; children: React.ReactNode }) {
   return (
     <main id="main" className="c-auth">
@@ -7,7 +9,7 @@ export default function AuthCard({ title, sub, children }: { title: string; sub:
             <img src="/crest.png" alt="" width={40} height={37} />
           </span>
           <div>
-            <b>New Jersey State University</b>
+            <b>{programme.brand}</b>
             <span>Scholarship committee</span>
           </div>
         </div>

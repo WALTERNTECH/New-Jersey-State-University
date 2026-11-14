@@ -4,7 +4,10 @@
 export const programme = {
   university: "New Jersey State University",
   short: "NJSU",
-  name: "NJSU Access Scholarship",
+  name: "Beacon Hills Associates Access Scholarship",
+  // The portal's own name, shown in the logo. The university above is where scholars study.
+  brand: "The Beacon Hills Associates",
+  brandSub: "Access Scholarship",
   office: "Office of Admissions and Financial Aid",
   cycle: "2027–28 academic year",
   cycleCode: "2027",

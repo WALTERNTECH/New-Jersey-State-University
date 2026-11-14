@@ -4,14 +4,14 @@ import { currentApplicant } from "@/lib/auth";
 import SignOutButton from "./SignOutButton";
 import CookieSettingsLink from "./CookieSettingsLink";
 
-export function Brand({ sub = "Admissions and Financial Aid", light = false }: { sub?: string; light?: boolean }) {
+export function Brand({ sub = programme.brandSub, light = false }: { sub?: string; light?: boolean }) {
   return (
-    <Link href="/" className={`brand${light ? " light" : ""}`} aria-label={`${programme.university} home`}>
+    <Link href="/" className={`brand${light ? " light" : ""}`} aria-label={`${programme.name} home`}>
       <span className="crest">
         <img src="/crest.png" alt="" width={40} height={37} />
       </span>
       <span className="wordmark">
-        <b>{programme.university}</b>
+        <b>{programme.brand}</b>
         <span>{sub}</span>
       </span>
     </Link>
@@ -44,7 +44,7 @@ export async function SiteHeader({ portal = false }: { portal?: boolean }) {
       </div>
       <header className="masthead">
         <div className="wrap">
-          <Brand sub={portal ? "Applicant portal" : "Admissions and Financial Aid"} />
+          <Brand sub={portal ? `${programme.brandSub} · Applicant portal` : programme.brandSub} />
           <nav className="mainnav" aria-label="Main">
             {!portal && (
               <>
@@ -112,7 +112,7 @@ export function SiteFooter() {
           </nav>
         </div>
         <div className="bottom">
-          <span>© {year} {programme.university}</span>
+          <span>© {year} {programme.brand}</span>
           <span className="footlinks">
             <Link href="/privacy">Privacy Policy</Link>
             <Link href="/cookies">Cookie Policy</Link>

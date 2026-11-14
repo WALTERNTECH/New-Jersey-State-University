@@ -140,10 +140,10 @@ export async function renderLetterPdf(l: LetterInfo): Promise<Uint8Array> {
   const ch = (crest.height / crest.width) * cw;
   page.drawImage(crest, { x: (W - cw) / 2, y: y - ch, width: cw, height: ch });
   y -= ch + 20;
-  const title = programme.university.toUpperCase();
+  const title = programme.brand.toUpperCase();
   page.drawText(title, { x: (W - serifBold.widthOfTextAtSize(title, 17)) / 2, y, size: 17, font: serifBold, color: NAVY });
   y -= 15;
-  const office = programme.office.toUpperCase();
+  const office = programme.brandSub.toUpperCase();
   page.drawText(office, { x: (W - sans.widthOfTextAtSize(office, 7.5)) / 2, y, size: 7.5, font: sans, color: GREY });
   y -= 14;
   page.drawLine({ start: { x: L, y }, end: { x: R, y }, thickness: 1.4, color: GOLD });
@@ -167,8 +167,7 @@ export async function renderLetterPdf(l: LetterInfo): Promise<Uint8Array> {
 
   text(`Dear ${(d.first_name || name).trim()},`, L, 11, serif);
   y -= 26;
-  text("Offer of Admission and Award of the NJSU Access Scholarship", L, 12.5, serifBold, NAVY);
-  y -= 24;
+  para(`Offer of Admission and Award of the ${programme.name}`, { size: 12.5, font: serifBold, color: NAVY, leading: 16, after: 10 });
 
   const level = levelOf(d);
   const declared = d.major && d.major !== "Undecided";
