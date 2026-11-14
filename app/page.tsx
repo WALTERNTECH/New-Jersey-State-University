@@ -23,8 +23,7 @@ export default function Home() {
                 {programme.name} · {programme.cycle}
               </p>
               <h1 id="hero-title" className="hero-statement">
-                Comprehensive scholarships offering <em>full tuition</em> and <em>up to $15,000</em> in living stipends for undergraduate, master’s, and
-                doctoral candidates in New&nbsp;Jersey.
+                <em>Full tuition</em> and <em>up to $15,000&nbsp;a&nbsp;year</em> in allowances for bachelor’s, master’s and doctoral study in New&nbsp;Jersey.
               </h1>
               <div className="actions">
                 <Link href="/apply" className="btn btn-gold btn-lg">
