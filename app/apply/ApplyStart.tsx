@@ -4,67 +4,106 @@ import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/client";
 import { isEmail } from "@/lib/form";
-import { countryList } from "@/lib/content";
+import { countryList, levelById, levels, type LevelId } from "@/lib/content";
 
-type Answer = "yes" | "no" | "soon";
-type Key = "country" | "school" | "need" | "degree" | "age";
+type Answer = string;
+type Key = "country" | "level" | "qualification" | "need" | "degree" | "age";
+type Question = { key: Key; text: string; options: { v: Answer; label: string }[]; pass: Answer[]; why: string };
 
-const questions: { key: Key; text: string; options: { v: Answer; label: string }[]; pass: Answer[]; why: string }[] = [
-  {
-    key: "country",
-    text: `Are you a citizen or resident of ${countryList.replace(" and ", " or ")}?`,
-    options: [
-      { v: "yes", label: "Yes" },
-      { v: "no", label: "No" },
-    ],
-    pass: ["yes"],
-    why: `The Access Scholarship is open only to citizens and residents of ${countryList}.`,
-  },
-  {
-    key: "school",
-    text: "Have you completed secondary school?",
-    options: [
-      { v: "yes", label: "Yes" },
-      { v: "soon", label: "I will complete it this year" },
-      { v: "no", label: "No" },
-    ],
-    pass: ["yes", "soon"],
-    why: "Candidates must have completed secondary school, or expect to complete it before the academic year begins.",
-  },
-  {
-    key: "need",
-    text: "Would your family require financial support for you to attend university?",
-    options: [
-      { v: "yes", label: "Yes" },
-      { v: "no", label: "No" },
-    ],
-    pass: ["yes"],
-    why: "The Access Scholarship is reserved for students whose families are unable to meet the cost of a university education.",
-  },
-  {
-    key: "degree",
-    text: "Do you already hold a bachelor’s degree?",
-    options: [
-      { v: "no", label: "No" },
-      { v: "yes", label: "Yes" },
-    ],
-    pass: ["no"],
-    why: "The scholarship supports study toward a first bachelor’s degree only.",
-  },
-  {
-    key: "age",
-    text: "Will you be at least 16 years of age when the academic year begins?",
-    options: [
-      { v: "yes", label: "Yes" },
-      { v: "no", label: "No" },
-    ],
-    pass: ["yes"],
-    why: "Scholars must be at least 16 years of age at matriculation.",
-  },
+const yesNo = [
+  { v: "yes", label: "Yes" },
+  { v: "no", label: "No" },
+];
+const done = (soon: string) => [
+  { v: "yes", label: "Yes" },
+  { v: "soon", label: soon },
+  { v: "no", label: "No" },
 ];
 
-export default function ApplyStart() {
-  const [answers, setAnswers] = useState<Partial<Record<Key, Answer>>>({});
+const qualification: Record<LevelId, Question> = {
+  bachelors: {
+    key: "qualification",
+    text: "Have you completed secondary school?",
+    options: done("I will complete it this year"),
+    pass: ["yes", "soon"],
+    why: "Bachelor’s candidates must have completed secondary school, or expect to complete it before the academic year begins.",
+  },
+  masters: {
+    key: "qualification",
+    text: "Have you completed a bachelor’s degree?",
+    options: done("I will complete it this year"),
+    pass: ["yes", "soon"],
+    why: "Master’s candidates must hold a bachelor’s degree, or expect to complete one before the academic year begins.",
+  },
+  doctoral: {
+    key: "qualification",
+    text: "Have you completed a master’s degree, or a bachelor’s degree with honours?",
+    options: done("I will complete it this year"),
+    pass: ["yes", "soon"],
+    why: "Doctoral candidates must hold a master’s degree or a bachelor’s degree with honours, or expect to complete one before the academic year begins.",
+  },
+};
+
+function questionsFor(level: LevelId | undefined): Question[] {
+  return [
+    {
+      key: "country",
+      text: `Are you a citizen or resident of ${countryList.replace(" and ", " or ")}?`,
+      options: yesNo,
+      pass: ["yes"],
+      why: `The Access Scholarship is open only to citizens and residents of ${countryList}.`,
+    },
+    {
+      key: "level",
+      text: "Which degree will you study for?",
+      options: levels.map((l) => ({ v: l.id, label: l.label })),
+      pass: levels.map((l) => l.id),
+      why: "",
+    },
+    ...(level ? [qualification[level]] : []),
+    ...(level === "bachelors"
+      ? [
+          {
+            key: "degree" as const,
+            text: "Do you already hold a bachelor’s degree?",
+            options: [
+              { v: "no", label: "No" },
+              { v: "yes", label: "Yes" },
+            ],
+            pass: ["no"],
+            why: "Bachelor’s awards support study toward a first bachelor’s degree only.",
+          },
+        ]
+      : []),
+    {
+      key: "need",
+      text: "Would your family require financial support for you to attend university?",
+      options: yesNo,
+      pass: ["yes"],
+      why: "The Access Scholarship is reserved for students whose families are unable to meet the cost of a university education.",
+    },
+    {
+      key: "age",
+      text: "Will you be at least 16 years of age when the academic year begins?",
+      options: yesNo,
+      pass: ["yes"],
+      why: "Scholars must be at least 16 years of age at matriculation.",
+    },
+  ];
+}
+
+export default function ApplyStart({ initialLevel }: { initialLevel?: string }) {
+  const [answers, setAnswers] = useState<Partial<Record<Key, Answer>>>(() => (levelById(initialLevel) ? { level: initialLevel } : {}));
+  const questions = questionsFor(levelById(answers.level)?.id);
+  const choose = (key: Key, v: Answer) =>
+    setAnswers((a) => {
+      if (key !== "level" || a.level === v) return { ...a, [key]: v };
+      // A different level asks a different qualification question.
+      const next = { ...a, level: v };
+      delete next.qualification;
+      delete next.degree;
+      return next;
+    });
   const [stage, setStage] = useState<"check" | "account">("check");
   const [form, setForm] = useState({ first_name: "", last_name: "", email: "", password: "" });
   const [show, setShow] = useState(false);
@@ -94,7 +133,8 @@ export default function ApplyStart() {
     setBusy(true);
     setError("");
     try {
-      await api("/api/auth/register", { method: "POST", json: { ...form, eligibility: answers } });
+      const eligibility = Object.fromEntries(questions.map((q) => [q.key, answers[q.key]]));
+      await api("/api/auth/register", { method: "POST", json: { ...form, eligibility } });
       window.location.href = "/portal/application";
     } catch (err) {
       const x = err as Error & { data?: { field?: string } };
@@ -115,7 +155,7 @@ export default function ApplyStart() {
               <p>{q.text}</p>
               <div className="choice">
                 {q.options.map((o) => (
-                  <button key={o.v} type="button" aria-pressed={answers[q.key] === o.v} onClick={() => setAnswers((a) => ({ ...a, [q.key]: o.v }))}>
+                  <button key={o.v} type="button" aria-pressed={answers[q.key] === o.v} onClick={() => choose(q.key, o.v)}>
                     {o.label}
                   </button>
                 ))}

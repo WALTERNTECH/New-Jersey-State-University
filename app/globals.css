@@ -191,6 +191,20 @@ p { margin: 0; }
   .step-go svg { width: 20px; height: 20px; }
 }
 
+/* Levels of study: three linked cards, stacked on narrow screens. */
+.levels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.level, .level:visited { display: flex; flex-direction: column; gap: 14px; height: 100%; padding: 24px; background: #fff; border: 1px solid var(--line); border-top: 6px solid var(--navy); color: var(--ink); text-decoration: none; }
+.level:hover { background: #e6ecf2; border-top-color: var(--gold); color: var(--ink); }
+.level-t { font-size: 21px; font-weight: 700; line-height: 1.25; }
+.level-d { display: grid; gap: 2px; font-size: 16px; color: var(--ink-2); }
+.level-d b { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); }
+.level-go { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 700; color: var(--navy-3); text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 900px) {
+  .levels { grid-template-columns: 1fr; gap: 12px; }
+  .level, .level:visited { padding: 18px 16px; gap: 10px; }
+  .level-t { font-size: 19px; }
+}
+
 .faq { border-top: 1px solid var(--line); }
 .faq details { border-bottom: 1px solid var(--line); background: #fff; }
 .faq summary { list-style: none; cursor: pointer; padding: 18px 48px 18px 20px; font-size: 18px; font-weight: 700; color: var(--ink); position: relative; background: var(--bg); }

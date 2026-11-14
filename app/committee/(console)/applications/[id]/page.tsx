@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { canDecide, requireStaffPage, roleLabels, type Role } from "@/lib/staff";
 import { fullName, nextStatuses, scoreCriteria } from "@/lib/committee";
-import { docLabel, documentKinds, enrolKindSet, enrolmentDocs, reviewLabels, statusLabels, steps, wordCount } from "@/lib/form";
+import { docLabel, documentKinds, enrolKindSet, enrolmentDocs, reviewLabels, statusLabels, steps, visibleFields, wordCount } from "@/lib/form";
 import { fmtDate, fmtSize } from "@/lib/client";
 import { StatusChip, when } from "@/components/committee/bits";
 import { NoteForm, ResetApplicantPassword, ScoreForm, StatusControl } from "@/components/committee/Actions";
-import { allowanceBySlug } from "@/lib/content";
+import { allowanceBySlug, levelById, levelOf } from "@/lib/content";
 import { requestStatusLabels } from "@/lib/allowances";
 import { letterFor, letterIsCurrent } from "@/lib/letter";
 import { emailKindLabels } from "@/lib/email-templates";
@@ -27,6 +27,22 @@ const eligibilityText: Record<string, Record<string, string>> = {
   degree: { no: "No previous bachelor's degree" },
   age: { yes: "16 or older at start" },
 };
+const qualificationText: Record<string, Record<string, string>> = {
+  bachelors: { yes: "Completed secondary school", soon: "Finishing secondary school this year" },
+  masters: { yes: "Holds a bachelor's degree", soon: "Finishing a bachelor's degree this year" },
+  doctoral: { yes: "Holds a master's or honours degree", soon: "Finishing a master's or honours degree this year" },
+};
+
+function eligibilitySummary(e: Record<string, string> | null) {
+  const answers = e ?? {};
+  return Object.entries(answers)
+    .map(([k, v]) =>
+      k === "level" ? levelById(v)?.label ?? v :
+      k === "qualification" ? qualificationText[answers.level ?? "bachelors"]?.[v] ?? `${k}: ${v}` :
+      eligibilityText[k]?.[v] ?? `${k}: ${v}`,
+    )
+    .join(" · ");
+}
 
 export default async function ApplicationDetail({ params }: { params: Promise<{ id: string }> }) {
   const me = await requireStaffPage();
@@ -108,7 +124,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
           <p className="flex" style={{ marginTop: 8 }}>
             <StatusChip status={app.status} />
             <span>
-              {[d.residence, age !== null ? `${age} years old` : null, d.major].filter(Boolean).join(" · ")}
+              {[d.residence, age !== null ? `${age} years old` : null, levelOf(d).short, d.major].filter(Boolean).join(" · ")}
             </span>
           </p>
         </div>
@@ -247,7 +263,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
                 {[d.first_generation === "Yes" ? "First in family to attend university" : null, d.orphan_or_care === "Yes" ? "Lost a parent or grew up in care" : null].filter(Boolean).join(" · ") || "—"}
               </dd>
               <dt>Eligibility answers</dt>
-              <dd>{Object.entries(app.eligibility ?? {}).map(([k, v]) => eligibilityText[k]?.[v] ?? `${k}: ${v}`).join(" · ") || "—"}</dd>
+              <dd>{eligibilitySummary(app.eligibility) || "—"}</dd>
             </dl>
           </section>
 
@@ -308,7 +324,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
             <section className="c-card" key={s.id}>
               <div className="c-card-h"><h2>{s.title}</h2></div>
               <dl className="c-dl">
-                {s.fields.filter((f) => f.name !== "circumstances").map((f) => (
+                {visibleFields(s, d).filter((f) => f.name !== "circumstances").map((f) => (
                   <div key={f.name} style={{ display: "contents" }}>
                     <dt>{f.label}</dt>
                     <dd>{d[f.name] || <span className="muted">—</span>}</dd>

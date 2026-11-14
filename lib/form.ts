@@ -1,6 +1,6 @@
 // The application, described once and used by the form, the review page and the server checks.
 import { countries } from "./countries";
-import { countryNames, eligibleCountries, programmes } from "./content";
+import { countryNames, eligibleCountries, levelLabels, levelOf, programmesByLevel, type LevelId } from "./content";
 
 export type FieldType = "text" | "email" | "date" | "select" | "textarea" | "number" | "yesno" | "phone";
 
@@ -36,6 +36,21 @@ export type Data = Record<string, string>;
 
 const yearNow = new Date().getFullYear();
 
+// Some answers depend on the level of study. A name may appear more than once in a section,
+// with exactly one version shown for any level.
+const isLevel = (...ids: LevelId[]) => (d: Data) => ids.includes(levelOf(d).id);
+const undergrad = isLevel("bachelors");
+const postgrad = isLevel("masters", "doctoral");
+const programmeField = (id: LevelId): Field => ({
+  name: "major",
+  label: "Intended programme of study",
+  type: "select",
+  options: programmesByLevel[id],
+  required: true,
+  half: true,
+  showIf: isLevel(id),
+});
+
 export const steps: Step[] = [
   {
     id: "personal",
@@ -70,11 +85,13 @@ export const steps: Step[] = [
     title: "Academic background",
     short: "Education",
     fields: [
+      { name: "level", label: "Level of study", type: "select", options: levelLabels, required: true },
       {
         name: "education_level",
         label: "Highest level of education",
         type: "select",
         required: true,
+        showIf: undergrad,
         options: [
           "Completed secondary / high school",
           "In final year of secondary / high school",
@@ -83,11 +100,31 @@ export const steps: Step[] = [
           "Vocational or technical certificate",
         ],
       },
-      { name: "school_name", label: "Secondary school name", type: "text", required: true, maxLength: 160, half: true },
-      { name: "school_country", label: "Country of school", type: "select", options: countries, required: true, half: true },
+      {
+        name: "education_level",
+        label: "Highest level of education",
+        type: "select",
+        required: true,
+        showIf: postgrad,
+        options: [
+          "In final year of a bachelor’s degree",
+          "Bachelor’s degree",
+          "Bachelor’s degree with honours",
+          "Postgraduate diploma or certificate",
+          "In final year of a master’s degree",
+          "Master’s degree",
+          "Doctoral degree",
+        ],
+      },
+      { name: "school_name", label: "Secondary school name", type: "text", required: true, maxLength: 160, half: true, showIf: undergrad },
+      { name: "university", label: "University or college", type: "text", required: true, maxLength: 160, half: true, showIf: postgrad },
+      { name: "degree_subject", label: "Degree and subject", type: "text", required: true, maxLength: 120, half: true, showIf: postgrad },
+      { name: "school_country", label: "Country of school or university", type: "select", options: countries, required: true, half: true },
       { name: "graduation_year", label: "Year completed or expected", type: "number", required: true, min: 1970, max: yearNow + 1, half: true },
-      { name: "grades", label: "Final grade or average", type: "text", required: true, half: true, maxLength: 60 },
-      { name: "major", label: "Intended programme of study", type: "select", options: programmes, required: true, half: true },
+      { name: "grades", label: "Final grade, class or average", type: "text", required: true, half: true, maxLength: 60 },
+      programmeField("bachelors"),
+      programmeField("masters"),
+      programmeField("doctoral"),
       {
         name: "english",
         label: "English",
@@ -97,6 +134,8 @@ export const steps: Step[] = [
         options: ["First language", "My school taught in English", "I have an English test score", "I am still learning English"],
       },
       { name: "english_test", label: "English test and score", type: "text", maxLength: 60, showIf: (d) => d.english === "I have an English test score", required: true },
+      { name: "research", label: "Proposed research topic", type: "textarea", required: true, minWords: 50, maxWords: 300, showIf: isLevel("doctoral") },
+      { name: "supervisor", label: "Preferred supervisor", type: "text", maxLength: 120, showIf: isLevel("doctoral") },
     ],
   },
   {
@@ -184,7 +223,7 @@ export const enrolmentDocs = [
   { kind: "passport", label: "Passport biographical page", required: true },
   { kind: "photo", label: "Passport-style photograph", required: true },
   { kind: "immunisation", label: "Immunisation record", required: true },
-  { kind: "certificate", label: "Final school certificate", required: false },
+  { kind: "certificate", label: "Final school or degree certificate", required: false },
 ] as const;
 
 export type DocKind = (typeof documentKinds)[number]["kind"];
@@ -274,6 +313,18 @@ export function stepErrors(step: Step, d: Data): Record<string, string> {
   }
   return out;
 }
+
+/** The fields of a section that apply to these answers, one per name. */
+export const visibleFields = (step: Step, d: Data) => step.fields.filter((f) => !f.showIf || f.showIf(d));
+
+/** Every field of the general record once, for tables and exports. */
+export const uniqueFields = (list: Step[]) => {
+  const seen = new Set<string>();
+  return list.flatMap((s) => s.fields).filter((f) => !seen.has(f.name) && seen.add(f.name));
+};
+
+/** A stored answer, or "" if it belongs to a version of the form these answers no longer use. */
+export const answerFor = (step: Step, name: string, d: Data) => (visibleFields(step, d).some((f) => f.name === name) ? d[name] ?? "" : "");
 
 /** Fields saved with the general application record. Payment details are never among them. */
 export const knownFields = new Set(steps.filter((s) => !s.secure).flatMap((s) => s.fields.map((f) => f.name)));

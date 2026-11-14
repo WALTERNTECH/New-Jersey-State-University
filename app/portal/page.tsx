@@ -7,7 +7,7 @@ import { ArrivalForm, OfferReply } from "@/components/portal/Admission";
 import { requireApplicant } from "@/lib/auth";
 import { applicationFor, documentsFor, eventsFor, progress } from "@/lib/application";
 import { requestsFor, requestStatusLabels } from "@/lib/allowances";
-import { allowanceBySlug, allowances, programme } from "@/lib/content";
+import { allowanceBySlug, allowances, levelOf, programme } from "@/lib/content";
 import { awardLines } from "@/lib/award";
 import { letterFor, letterIsCurrent } from "@/lib/letter";
 import { masked, paymentFor, paymentSummary } from "@/lib/payment";
@@ -191,7 +191,7 @@ export default async function Portal() {
                   ))}
                 </ul>
                 <p className="panel-b small muted" style={{ borderTop: "1px solid var(--line)" }}>
-                  Awards are renewed each year for up to eight semesters while the scholar remains enrolled full-time and in good academic standing.
+                  Awards are renewed each year for up to {levelOf(app.data).semesters} semesters while the scholar remains enrolled full-time and in good academic standing.
                 </p>
               </section>
             )}

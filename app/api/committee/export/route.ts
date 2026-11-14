@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { fail } from "@/lib/auth";
 import { audit, requireStaffApi } from "@/lib/staff";
-import { steps, statusLabels } from "@/lib/form";
+import { answerFor, steps, statusLabels, uniqueFields } from "@/lib/form";
 
 const cell = (v: unknown) => {
   let s = v === null || v === undefined ? "" : String(v);
@@ -23,12 +23,14 @@ export async function GET() {
      where a.status <> 'draft' order by a.submitted_at`,
   );
   // Bank details never leave the console in an export.
-  const fields = steps.filter((s) => !s.secure).flatMap((s) => s.fields).filter((f) => !f.name.startsWith("essay_"));
+  const general = steps.filter((s) => !s.secure);
+  const fields = uniqueFields(general).filter((f) => !f.name.startsWith("essay_"));
+  const stepOf = (name: string) => general.find((s) => s.fields.some((f) => f.name === name))!;
   const header = ["Reference", "Status", "Submitted", "Email", ...fields.map((f) => f.label), "Average score /20", "Scores"];
   const lines = [header.map(cell).join(",")];
   for (const r of rows) {
     lines.push(
-      [r.reference, statusLabels[r.status] ?? r.status, new Date(r.submitted_at).toISOString(), r.email, ...fields.map((f) => r.data[f.name] ?? ""), r.avg ?? "", r.n]
+      [r.reference, statusLabels[r.status] ?? r.status, new Date(r.submitted_at).toISOString(), r.email, ...fields.map((f) => answerFor(stepOf(f.name), f.name, r.data)), r.avg ?? "", r.n]
         .map(cell)
         .join(","),
     );

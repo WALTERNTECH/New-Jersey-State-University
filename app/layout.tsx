@@ -13,9 +13,9 @@ const site = process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.VERCEL_PROJECT_PRO
 export const metadata: Metadata = {
   metadataBase: new URL(site),
   title: { default: `${programme.name} | ${programme.university}`, template: `%s | ${programme.university}` },
-  description: `The ${programme.name} meets the full cost of attendance for four years of undergraduate study at ${programme.university} for students of exceptional promise and demonstrated financial need.`,
+  description: `The ${programme.name} meets the full cost of attendance for bachelor’s, master’s and doctoral study at ${programme.university} for students of exceptional promise and demonstrated financial need.`,
   icons: { icon: "/icon.png", apple: "/apple-icon.png" },
-  openGraph: { title: programme.name, description: "Four years of undergraduate study, with the full cost of attendance met.", images: ["/logo-full.png"] },
+  openGraph: { title: programme.name, description: "Bachelor’s, master’s and doctoral study, with the full cost of attendance met.", images: ["/logo-full.png"] },
 };
 
 export const viewport: Viewport = { themeColor: "#06243c", width: "device-width", initialScale: 1 };

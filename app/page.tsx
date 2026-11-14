@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/Chrome";
 import { BackgroundVideo } from "@/components/Motion";
 import { ChevronIcon } from "@/components/Icons";
-import { allowances, countryList, eligibility, faqs, phaseLabels, pillars, programme, timeline } from "@/lib/content";
+import { allowances, countryList, eligibility, faqs, levels, phaseLabels, pillars, programme, timeline } from "@/lib/content";
 
 const howTo = [
   { title: "Check your eligibility", action: "Start", href: "/apply" },
@@ -23,7 +23,7 @@ export default function Home() {
                 {programme.name} · {programme.cycle}
               </p>
               <h1 id="hero-title">A complete education, fully funded.</h1>
-              <p className="hero-lede">Full tuition, housing, dining and allowances for four years of undergraduate study at {programme.university}.</p>
+              <p className="hero-lede">Full tuition, housing, dining and allowances for bachelor’s, master’s and doctoral study at {programme.university}.</p>
               <div className="actions">
                 <Link href="/apply" className="btn btn-gold btn-lg">
                   Start your application
@@ -46,8 +46,8 @@ export default function Home() {
               <dd>Full cost of attendance</dd>
             </div>
             <div>
-              <dt>Duration</dt>
-              <dd>Four years</dd>
+              <dt>Degrees</dt>
+              <dd>Bachelor’s, master’s, Ph.D.</dd>
             </div>
             <div>
               <dt>Deadline</dt>
@@ -76,7 +76,36 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section alt" id="allowances">
+        <section className="section alt" id="levels">
+          <div className="wrap">
+            <div className="section-head">
+              <h2>Levels of study</h2>
+            </div>
+            <ul className="levels">
+              {levels.map((l) => (
+                <li key={l.id}>
+                  <Link href={`/apply?level=${l.id}`} className="level">
+                    <span className="level-t">{l.label}</span>
+                    <span className="level-d">
+                      <b>Award length</b>
+                      {l.duration}
+                    </span>
+                    <span className="level-d">
+                      <b>Entry qualification</b>
+                      {l.entry}
+                    </span>
+                    <span className="level-go">
+                      Check your eligibility
+                      <ChevronIcon />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="section" id="allowances">
           <div className="wrap">
             <div className="section-head flex" style={{ justifyContent: "space-between", maxWidth: "none" }}>
               <h2>Allowances</h2>
@@ -110,7 +139,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section" id="eligibility">
+        <section className="section alt" id="eligibility">
           <div className="wrap split">
             <div>
               <h2 className="h2">Eligibility</h2>
@@ -127,7 +156,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section alt" id="how">
+        <section className="section" id="how">
           <div className="wrap">
             <div className="section-head">
               <h2>How to apply</h2>
@@ -149,7 +178,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section" id="dates">
+        <section className="section alt" id="dates">
           <div className="wrap">
             <div className="section-head">
               <h2>Key dates</h2>
@@ -178,7 +207,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="section alt" id="faq">
+        <section className="section" id="faq">
           <div className="wrap">
             <div className="section-head">
               <h2>Frequently asked questions</h2>

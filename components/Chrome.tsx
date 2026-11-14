@@ -79,8 +79,8 @@ export function SiteFooter() {
           <div style={{ maxWidth: 380 }}>
             <Brand light />
             <p className="mt16">
-              The {programme.name} meets the full cost of attendance for four years of undergraduate study for students of exceptional promise and
-              demonstrated financial need.
+              The {programme.name} meets the full cost of attendance for bachelor’s, master’s and doctoral study for students of exceptional promise
+              and demonstrated financial need.
             </p>
           </div>
           <nav aria-label="Footer">

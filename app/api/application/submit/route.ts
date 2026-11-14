@@ -5,6 +5,7 @@ import { applicationFor, documentsFor, progress } from "@/lib/application";
 import { alertOffice, sendEmail } from "@/lib/email";
 import { paymentFor } from "@/lib/payment";
 import { logAccess } from "@/lib/access";
+import { levelOf } from "@/lib/content";
 
 export async function POST(req: Request) {
   if (badOrigin(req)) return fail(403, "Request blocked");
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
       reference: app.reference,
       app_id: app.id,
       residence: app.data.residence ?? "",
-      major: app.data.major ?? "",
+      major: [levelOf(app.data).short, app.data.major].filter(Boolean).join(", "),
     });
   }
   return NextResponse.json({ ok: true, reference: app.reference });

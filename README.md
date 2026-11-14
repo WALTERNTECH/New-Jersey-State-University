@@ -1,6 +1,6 @@
 # NJSU Access Scholarship portal
 
-The public scholarship site and applicant portal for New Jersey State University's four-year Access Scholarship.
+The public scholarship site and applicant portal for New Jersey State University's Access Scholarship, for bachelor's, master's and doctoral study. The levels, their entry qualifications and their programmes are in `lib/content.ts` (`levels`, `programmesByLevel`).
 
 ## The applicant journey
 

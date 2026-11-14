@@ -1,4 +1,4 @@
-import { allowanceBySlug } from "./content";
+import { allowanceBySlug, levelOf } from "./content";
 
 export interface AwardLine {
   title: string;
@@ -10,7 +10,7 @@ export interface AwardLine {
 export function awardLines(data: Record<string, string>): AwardLine[] {
   const offCampus = String(data.housing ?? "").startsWith("Off-campus");
   const lines: AwardLine[] = [
-    { title: "Full tuition and required fees", amount: "Full cost", cadence: "eight semesters" },
+    { title: "Full tuition and required fees", amount: "Full cost", cadence: `up to ${levelOf(data).semesters} semesters` },
     offCampus
       ? { title: allowanceBySlug("off-campus-housing")!.title, amount: "Up to $18,000", cadence: "per academic year, on submission of a lease" }
       : { title: "University residence hall and dining plan", amount: "Full cost", cadence: "each academic year" },

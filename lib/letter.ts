@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { db, type Q } from "./db";
-import { programme } from "./content";
+import { levelOf, programme } from "./content";
 import { awardLines } from "./award";
 import { siteUrl } from "./site";
 import { CREST_PNG_BASE64 } from "./crest-data";
@@ -170,12 +170,17 @@ export async function renderLetterPdf(l: LetterInfo): Promise<Uint8Array> {
   text("Offer of Admission and Award of the NJSU Access Scholarship", L, 12.5, serifBold, NAVY);
   y -= 24;
 
-  const major = d.major && d.major !== "Undecided" ? `to study ${d.major}` : "with an undeclared major";
+  const level = levelOf(d);
+  const declared = d.major && d.major !== "Undecided";
+  const place =
+    level.id === "masters" ? `as a graduate student in the ${d.major || "master’s"} programme` :
+    level.id === "doctoral" ? `as a doctoral candidate in the ${d.major || "doctoral"} programme` :
+    `as a first-year undergraduate student ${declared ? `to study ${d.major}` : "with an undeclared major"}`;
   para(
-    `On behalf of the Scholarship Committee, I am delighted to offer you admission to ${programme.university} as a first-year undergraduate student ${major}, beginning in ${programme.startTerm} as a member of the ${programme.cycle}. You have also been selected as a recipient of the ${programme.name}.`,
+    `On behalf of the Scholarship Committee, I am delighted to offer you admission to ${programme.university} ${place}, beginning in ${programme.startTerm}. You have also been selected as a recipient of the ${programme.name}.`,
   );
   para(
-    "The Committee was impressed by your academic achievement, by the circumstances in which it was attained, and by the sense of purpose expressed in your personal statements. Your award is renewable for up to eight semesters while you remain enrolled full-time and in good academic standing, and comprises the following:",
+    `The Committee was impressed by your academic achievement, by the circumstances in which it was attained, and by the sense of purpose expressed in your personal statements. Your award is renewable for up to ${level.semesters} semesters while you remain enrolled full-time and in good academic standing, and comprises the following:`,
     { after: 10 },
   );
 

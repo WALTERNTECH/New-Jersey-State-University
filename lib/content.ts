@@ -5,10 +5,9 @@ export const programme = {
   university: "New Jersey State University",
   short: "NJSU",
   name: "NJSU Access Scholarship",
-  office: "Office of Undergraduate Admissions and Financial Aid",
-  cycle: "Class of 2031",
+  office: "Office of Admissions and Financial Aid",
+  cycle: "2027–28 academic year",
   cycleCode: "2027",
-  years: 4,
   startTerm: "Fall 2027",
   opens: "9 November 2026",
   deadline: "15 March 2027",
@@ -25,10 +24,43 @@ export const programme = {
   contactPhone: process.env.NEXT_PUBLIC_CONTACT_PHONE ?? "",
 };
 
+/** The degrees the scholarship supports. `label` is the value stored in the application. */
+export const levels = [
+  {
+    id: "bachelors",
+    label: "Bachelor’s degree",
+    short: "Bachelor’s",
+    duration: "Four years",
+    semesters: 8,
+    entry: "Completion of secondary school, or expected completion before the start of the academic year, and no previously conferred bachelor’s degree.",
+  },
+  {
+    id: "masters",
+    label: "Master’s degree",
+    short: "Master’s",
+    duration: "Two years",
+    semesters: 4,
+    entry: "A completed bachelor’s degree, or expected completion before the start of the academic year.",
+  },
+  {
+    id: "doctoral",
+    label: "Doctoral degree (Ph.D. / Doctorate)",
+    short: "Doctoral",
+    duration: "Up to five years",
+    semesters: 10,
+    entry: "A completed master’s degree or bachelor’s degree with honours, or expected completion before the start of the academic year.",
+  },
+] as const;
+export type LevelId = (typeof levels)[number]["id"];
+export const levelLabels = levels.map((l) => l.label);
+export const levelById = (id: string | undefined) => levels.find((l) => l.id === id);
+/** Applications started before levels existed are bachelor’s applications. */
+export const levelOf = (d: Record<string, string | undefined>) => levels.find((l) => l.label === d.level) ?? levels[0];
+
 export const pillars = [
   {
     title: "Full tuition and required fees",
-    body: "The Access Scholarship meets the full cost of tuition and all mandatory university fees for eight consecutive semesters of undergraduate study.",
+    body: "The Access Scholarship meets the full cost of tuition and all mandatory university fees for the standard length of the degree: eight semesters for a bachelor’s degree, four for a master’s degree and up to ten for a doctoral degree.",
   },
   {
     title: "Housing and dining",
@@ -40,7 +72,7 @@ export const pillars = [
   },
   {
     title: "Advising and mentorship",
-    body: "Each scholar is supported by a dedicated scholarship advisor and a faculty mentor from orientation through commencement.",
+    body: "Each scholar is supported by a dedicated scholarship advisor and a faculty mentor or doctoral supervisor from orientation through commencement.",
   },
 ];
 
@@ -58,9 +90,8 @@ export const countryList = "Australia, Singapore, Kenya, Nigeria, Egypt and Ugan
 
 export const eligibility = [
   `Citizenship or residence in ${countryList}.`,
-  "Completion of secondary school, or expected completion before the start of the academic year.",
+  "The entry qualification for the chosen level of study, shown under Levels of study.",
   "Demonstrated financial need: the applicant’s family is unable to meet the cost of a university education.",
-  "No previously conferred bachelor’s degree.",
   "A minimum age of 16 years at matriculation.",
   "The ability to pursue coursework in English, or willingness to complete a preparatory English programme.",
 ];
@@ -75,12 +106,16 @@ export const timeline = [
 
 export const faqs = [
   {
+    q: "Which degrees does the scholarship support?",
+    a: "Bachelor’s, master’s and doctoral (Ph.D.) study. Applicants choose their level of study when they check their eligibility, and the application asks for the qualifications that level requires.",
+  },
+  {
     q: "What does the Access Scholarship cover?",
-    a: "The award meets full tuition and required fees, housing and dining, and a series of allowances for course materials, technology, personal expenses, travel and health insurance for four years of undergraduate study. Details of each allowance are published on the Financial Aid page.",
+    a: "The award meets full tuition and required fees, housing and dining, and a series of allowances for course materials, technology, personal expenses, travel and health insurance for the standard length of the degree. Details of each allowance are published on the Financial Aid page.",
   },
   {
     q: "Is the scholarship renewable?",
-    a: "The award is renewed each academic year for up to eight semesters, provided the scholar remains enrolled full-time and in good academic standing.",
+    a: "The award is renewed each academic year for the standard length of the degree (up to eight semesters for a bachelor’s degree, four for a master’s degree and ten for a doctoral degree), provided the scholar remains enrolled full-time and in good academic standing.",
   },
   {
     q: "Which countries are eligible?",
@@ -108,16 +143,29 @@ export const faqs = [
   },
 ];
 
-export const programmes = [
-  "Business Administration",
-  "Computer Science",
-  "Nursing",
-  "Education",
-  "Health Science",
-  "Engineering Technology",
-  "Psychology",
-  "Undecided",
-];
+/** Programmes open to scholars, by level of study. */
+export const programmesByLevel: Record<LevelId, string[]> = {
+  bachelors: ["Business Administration", "Computer Science", "Nursing", "Education", "Health Science", "Engineering Technology", "Psychology", "Undecided"],
+  masters: [
+    "Master of Business Administration (MBA)",
+    "M.S. in Computer Science",
+    "M.S. in Nursing",
+    "M.Ed. in Education",
+    "Master of Public Health (MPH)",
+    "M.S. in Engineering",
+    "M.A. in Psychology",
+  ],
+  doctoral: [
+    "Doctor of Business Administration (DBA)",
+    "Ph.D. in Computer Science",
+    "Ph.D. in Nursing",
+    "Ed.D. in Education",
+    "Ph.D. in Public Health",
+    "Ph.D. in Engineering",
+    "Ph.D. in Psychology",
+  ],
+};
+export const programmes = Object.values(programmesByLevel).flat();
 
 /* ---------------- Allowances ---------------- */
 
@@ -217,7 +265,7 @@ export const allowances: Allowance[] = [
     cadence: "one-time arrival grant",
     coverage: "Provided during move-in week for bedding, cold-weather clothing, luggage, kitchenware and the items needed to establish a room.",
     phase: "admitted",
-    who: "All first-year scholars.",
+    who: "All scholars in their first year.",
     fields: [
       { name: "arrival_date", label: "Expected arrival date", type: "date", required: true },
       { name: "needs", label: "Principal items you need on arrival", type: "textarea", required: true },
@@ -231,7 +279,7 @@ export const allowances: Allowance[] = [
     cadence: "per academic year",
     coverage: "Round-trip air, rail or intercity transport between the scholar’s home address and campus for autumn arrival, the winter and spring breaks, and summer departure.",
     phase: "admitted",
-    who: "All scholars. First-year scholars request their arrival journey here.",
+    who: "All scholars. Scholars in their first year request their arrival journey here.",
     fields: [
       { name: "journey", label: "Journey", type: "select", required: true, options: ["Autumn arrival", "Winter break", "Spring break", "Summer departure"] },
       { name: "from_city", label: "Departing from (city and country)", type: "text", required: true },

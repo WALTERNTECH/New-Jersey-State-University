@@ -3,12 +3,15 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-export default function FilterBar({ countries, majors }: { countries: string[]; majors: string[] }) {
+type Level = { id: string; label: string; programmes: string[] };
+
+export default function FilterBar({ countries, levels }: { countries: string[]; levels: Level[] }) {
   const router = useRouter();
   const path = usePathname();
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
-  const active = ["country", "major", "sort"].filter((k) => params.get(k)).length;
+  const active = ["country", "level", "major", "sort"].filter((k) => params.get(k)).length;
+  const level = levels.find((l) => l.id === params.get("level"));
   const [more, setMore] = useState(false);
 
   const push = (changes: Record<string, string>) => {
@@ -38,10 +41,20 @@ export default function FilterBar({ countries, majors }: { countries: string[]; 
           <option key={c}>{c}</option>
         ))}
       </select>
+      <select className="input" aria-label="Level of study" value={params.get("level") ?? ""} onChange={(e) => push({ level: e.target.value, major: "" })}>
+        <option value="">All levels</option>
+        {levels.map((l) => (
+          <option key={l.id} value={l.id}>{l.label}</option>
+        ))}
+      </select>
       <select className="input" aria-label="Programme" value={params.get("major") ?? ""} onChange={(e) => push({ major: e.target.value })}>
         <option value="">All programmes</option>
-        {majors.map((c) => (
-          <option key={c}>{c}</option>
+        {(level ? [level] : levels).map((l) => (
+          <optgroup key={l.id} label={l.label}>
+            {l.programmes.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </optgroup>
         ))}
       </select>
       <select className="input" aria-label="Sort by" value={params.get("sort") ?? "recent"} onChange={(e) => push({ sort: e.target.value === "recent" ? "" : e.target.value })}>

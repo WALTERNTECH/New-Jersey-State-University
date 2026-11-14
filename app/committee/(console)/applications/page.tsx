@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { canDecide, requireStaffPage } from "@/lib/staff";
 import { AVG_SCORE_SQL, fullName, statusCounts } from "@/lib/committee";
-import { programmes } from "@/lib/content";
+import { levelById, levelOf, levels, programmesByLevel } from "@/lib/content";
 import FilterBar from "@/components/committee/FilterBar";
 import { StatusChip, when } from "@/components/committee/bits";
 import { BulkBar } from "@/components/committee/Workflow";
@@ -30,7 +30,7 @@ const titles: Record<string, string> = {
   draft: "Applications still in progress",
 };
 
-type Search = { status?: string; q?: string; country?: string; major?: string; sort?: string; page?: string };
+type Search = { status?: string; q?: string; country?: string; level?: string; major?: string; sort?: string; page?: string };
 
 export default async function Applications({ searchParams }: { searchParams: Promise<Search> }) {
   const me = await requireStaffPage();
@@ -50,6 +50,9 @@ export default async function Applications({ searchParams }: { searchParams: Pro
     where.push(`(a.reference ilike ${like} or p.email ilike ${like} or (coalesce(a.data->>'first_name','') || ' ' || coalesce(a.data->>'last_name','')) ilike ${like})`);
   }
   if (sp.country) where.push(`a.data->>'residence' = ${arg(sp.country)}`);
+  // Applications from before levels existed are bachelor's applications.
+  const lvl = levelById(sp.level);
+  if (lvl) where.push(`coalesce(a.data->>'level', ${arg(levels[0].label)}) = ${arg(lvl.label)}`);
   if (sp.major) where.push(`a.data->>'major' = ${arg(sp.major)}`);
   const order =
     sp.sort === "score" ? "avg_score desc nulls last, a.submitted_at" :
@@ -105,7 +108,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
             </Link>
           ))}
         </nav>
-        <FilterBar countries={countries.rows.map((r) => r.c)} majors={programmes} />
+        <FilterBar countries={countries.rows.map((r) => r.c)} levels={levels.map((l) => ({ id: l.id, label: l.label, programmes: programmesByLevel[l.id] }))} />
         {rows.length ? (
           <table className="c-table">
             <thead>
@@ -141,7 +144,10 @@ export default async function Applications({ searchParams }: { searchParams: Pro
                   </td>
                   <td data-label="Reference" className="mono">{r.reference}</td>
                   <td data-label="Country">{r.data.residence || "—"}</td>
-                  <td data-label="Programme">{r.data.major || "—"}</td>
+                  <td data-label="Programme">
+                    {r.data.major || "—"}
+                    <span className="sub">{levelOf(r.data).short}</span>
+                  </td>
                   <td data-label="Income" className="nowrap">{(r.data.income || "—").replace(/ – /g, "–")}</td>
                   <td data-label="Score" className="num">
                     {r.avg_score !== null ? (
@@ -160,7 +166,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
             </tbody>
           </table>
         ) : (
-          <p className="c-empty">{sp.q || sp.country || sp.major ? "No applications match these filters." : "Nothing here right now."}</p>
+          <p className="c-empty">{sp.q || sp.country || sp.level || sp.major ? "No applications match these filters." : "Nothing here right now."}</p>
         )}
         {total > PAGE && (
           <div className="c-pager">
