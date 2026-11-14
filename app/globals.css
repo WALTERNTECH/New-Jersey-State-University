@@ -116,16 +116,23 @@ p { margin: 0; }
 .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 56px; align-items: center; padding-top: 64px; padding-bottom: 64px; }
 .hero h1 { color: #fff; font-size: 52px; line-height: 1.1; margin: 12px 0 18px; }
 .hero-lede { font-size: 21px; color: #fff; max-width: 600px; }
+/* The banner statement: one long sentence, set large but at reading weight. */
+.hero h1.hero-statement { font-size: clamp(32px, 3.2vw, 44px); font-weight: 600; line-height: 1.22; letter-spacing: -0.01em; max-width: 24em; margin: 16px 0 0; text-wrap: balance; }
+.hero-statement em { font-style: normal; font-weight: 700; color: var(--gold); }
 .hero .actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
 .hero-media { border: 4px solid var(--gold); background: var(--navy-2); aspect-ratio: 9 / 16; overflow: hidden; }
 .hero-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
 @media (max-width: 900px) {
   .hero-grid { grid-template-columns: 1fr; gap: 32px; padding-top: 40px; padding-bottom: 40px; }
   .hero h1 { font-size: 38px; }
+  .hero h1.hero-statement { font-size: 28px; line-height: 1.25; text-wrap: pretty; }
   .hero-lede { font-size: 18px; }
   .hero-media { max-width: 320px; }
 }
-@media (max-width: 520px) { .hero .actions .btn { flex: 1 1 100%; } }
+@media (max-width: 520px) {
+  .hero .actions .btn { flex: 1 1 100%; }
+  .hero h1.hero-statement { font-size: 26px; }
+}
 
 .facts-strip { background: var(--bg); border-bottom: 1px solid var(--line); }
 .facts-grid { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; }

@@ -22,8 +22,10 @@ export default function Home() {
               <p className="kicker light">
                 {programme.name} · {programme.cycle}
               </p>
-              <h1 id="hero-title">A complete education, fully funded.</h1>
-              <p className="hero-lede">Full tuition, housing, dining and allowances for bachelor’s, master’s and doctoral study at {programme.university}.</p>
+              <h1 id="hero-title" className="hero-statement">
+                Comprehensive scholarships offering <em>full tuition</em> and <em>up to $15,000</em> in living stipends for undergraduate, master’s, and
+                doctoral candidates in New&nbsp;Jersey.
+              </h1>
               <div className="actions">
                 <Link href="/apply" className="btn btn-gold btn-lg">
                   Start your application
