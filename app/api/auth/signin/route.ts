@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { badOrigin, createSession, fail } from "@/lib/auth";
+import { logAccess } from "@/lib/access";
 
 // A real hash to compare against when the email is unknown, so timing does not reveal accounts.
 const DUMMY = bcrypt.hashSync("not-a-real-password", 10);
@@ -36,5 +37,6 @@ export async function POST(req: Request) {
   }
   await q.query("update applicants set failed_logins = 0, locked_until = null where id = $1", [a.id]);
   await createSession(a.id);
+  await logAccess("signin", { applicantId: a.id });
   return NextResponse.json({ ok: true, next: a.must_change ? "/portal/password?required=1" : null });
 }

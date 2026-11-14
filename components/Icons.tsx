@@ -6,6 +6,12 @@ export const CheckIcon = ({ size = 14 }: { size?: number }) => (
   </svg>
 );
 
+export const ChevronIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M9 5l7 7-7 7" />
+  </svg>
+);
+
 export const LockIcon = ({ size = 14 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <rect x="5" y="11" width="14" height="10" rx="1" />

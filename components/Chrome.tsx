@@ -114,7 +114,8 @@ export function SiteFooter() {
         <div className="bottom">
           <span>© {year} {programme.university}</span>
           <span className="footlinks">
-            <Link href="/cookies">Cookies</Link>
+            <Link href="/privacy">Privacy Policy</Link>
+            <Link href="/cookies">Cookie Policy</Link>
             <CookieSettingsLink className="footlink">Cookie settings</CookieSettingsLink>
           </span>
           <span className="notice">We never charge applicants or ask for a PIN, password or card number.</span>

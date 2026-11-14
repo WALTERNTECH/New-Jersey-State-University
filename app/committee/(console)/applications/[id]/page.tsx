@@ -14,6 +14,7 @@ import { emailKindLabels } from "@/lib/email-templates";
 import { DocReview, ResendLetter } from "@/components/committee/Workflow";
 import { RevealPayment } from "@/components/committee/RevealPayment";
 import { masked, paymentSummary } from "@/lib/payment";
+import { accessLabels } from "@/lib/access";
 
 export const metadata = { title: "Application" };
 const mailLabels: Record<string, string> = { sent: "Sent", skipped: "Not sent", failed: "Failed", queued: "Sending" };
@@ -77,6 +78,10 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
   const showId = ["accepted", "enrolled"].includes(app.status) || idDocs.length > 0;
   const hasLetter = letterIsCurrent(letter);
   const pay = await paymentSummary(id);
+  const access = await q.query<{ id: number; event: string; ip: string | null; user_agent: string | null; created_at: string }>(
+    "select l.id, l.event, l.ip, l.user_agent, l.created_at from access_log l join applications a on a.applicant_id = l.applicant_id where a.id = $1 order by l.created_at desc limit 10",
+    [id],
+  );
   const extraDocs = docs.rows.filter((x) => !documentKinds.some((k) => k.kind === x.kind));
   if (!lastView.rows.length) await q.query("insert into audit (staff_id, action, target) values ($1, 'view_application', $2)", [me.id, app.reference]);
 
@@ -406,6 +411,28 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
               </ul>
             ) : (
               <p className="c-empty">No emails yet</p>
+            )}
+          </section>
+
+          <section className="c-card">
+            <div className="c-card-h">
+              <h2>Account activity</h2>
+              <span className="muted">IP addresses, kept 12 months</span>
+            </div>
+            {access.rows.length ? (
+              <ul className="c-others c-card-b">
+                {access.rows.map((a) => (
+                  <li key={a.id}>
+                    <span>
+                      {accessLabels[a.event] ?? a.event}
+                      <span className="small muted" style={{ display: "block" }}>{fmtDate(a.created_at, true)}</span>
+                    </span>
+                    <span className="mono" title={a.user_agent ?? undefined}>{a.ip ?? "unknown"}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="c-empty">No activity recorded yet</p>
             )}
           </section>
         </aside>

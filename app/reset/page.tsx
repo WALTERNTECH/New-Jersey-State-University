@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/Chrome";
 import AuthSide from "@/components/AuthSide";
+import AuthAside from "@/components/AuthAside";
 import ResetForm from "./ResetForm";
 
 export const metadata = { title: "Choose a new password", robots: { index: false } };
@@ -17,6 +18,7 @@ export default async function ResetPage({ searchParams }: { searchParams: Promis
         />
         <div className="authx-main">
           <ResetForm token={token} />
+          <AuthAside signIn />
         </div>
       </main>
     </>

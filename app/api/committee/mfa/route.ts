@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { badOrigin, fail, seal, unseal } from "@/lib/auth";
 import { audit, currentStaff, markMfa } from "@/lib/staff";
 import { verifyTotp } from "@/lib/totp";
+import { logAccess } from "@/lib/access";
 
 /** Second step of sign-in. If the account has no authenticator yet, the code confirms the pending one. */
 export async function POST(req: Request) {
@@ -33,5 +34,6 @@ export async function POST(req: Request) {
   }
   await markMfa();
   await audit(me.id, "signin");
+  await logAccess("staff_signin", { staffId: me.id });
   return NextResponse.json({ ok: true, next: r.must_change ? "/committee/account?first=1" : "/committee" });
 }

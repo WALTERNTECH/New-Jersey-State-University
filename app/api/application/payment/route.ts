@@ -4,6 +4,7 @@ import { applicationFor } from "@/lib/application";
 import { paymentFields, paymentStep, stepErrors, type Data } from "@/lib/form";
 import { masked, paymentSummary, savePayment } from "@/lib/payment";
 import { alertOffice, sendEmail } from "@/lib/email";
+import { logAccess } from "@/lib/access";
 
 /**
  * Saves the applicant's bank details, sealed. While the application is in progress, each answer is
@@ -30,6 +31,7 @@ export async function PUT(req: Request) {
   const errors = stepErrors(paymentStep, patch);
   if (Object.keys(errors).length) return fail(400, "Please complete each required field", { errors });
   await savePayment(app.id, patch, false);
+  await logAccess("payment_changed", { applicantId: me.id });
   const account = masked(await paymentSummary(app.id));
   const name = (app.data.preferred_name || app.data.first_name || me.first_name).trim();
   await sendEmail({ kind: "payment_changed", to: me.email, applicantId: me.id, params: { name, reference: app.reference, account } });

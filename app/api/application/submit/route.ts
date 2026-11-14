@@ -4,6 +4,7 @@ import { badOrigin, currentApplicant, fail } from "@/lib/auth";
 import { applicationFor, documentsFor, progress } from "@/lib/application";
 import { alertOffice, sendEmail } from "@/lib/email";
 import { paymentFor } from "@/lib/payment";
+import { logAccess } from "@/lib/access";
 
 export async function POST(req: Request) {
   if (badOrigin(req)) return fail(403, "Request blocked");
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
     return true;
   });
   if (moved) {
+    await logAccess("submitted", { applicantId: me.id });
     const name = (app.data.preferred_name || app.data.first_name || me.first_name).trim();
     await sendEmail({ kind: "submitted", to: me.email, applicantId: me.id, params: { name, reference: app.reference } });
     await alertOffice("office_submitted", {

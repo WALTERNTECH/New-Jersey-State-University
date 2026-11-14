@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { badOrigin, fail } from "@/lib/auth";
+import { logAccess } from "@/lib/access";
 
 const Body = z.object({ token: z.string().min(20).max(200), password: z.string().min(8).max(200) });
 
@@ -20,13 +21,14 @@ export async function POST(req: Request) {
       "select applicant_id from password_resets where token_hash = $1 and used_at is null and expires_at > now() for update",
       [hash],
     );
-    if (!rows[0]) return false;
+    if (!rows[0]) return null;
     const id = rows[0].applicant_id;
     await t.query("update applicants set password_hash = $2, must_change = false, failed_logins = 0, locked_until = null where id = $1", [id, pw]);
     await t.query("update password_resets set used_at = now() where applicant_id = $1 and used_at is null", [id]);
     await t.query("delete from sessions where applicant_id = $1", [id]);
-    return true;
+    return id;
   });
   if (!ok) return fail(400, "This link has expired or has already been used. Please request a new one.");
+  await logAccess("password_reset", { applicantId: ok });
   return NextResponse.json({ ok: true });
 }

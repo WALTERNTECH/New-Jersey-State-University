@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/Chrome";
 import AuthSide from "@/components/AuthSide";
+import AuthAside from "@/components/AuthAside";
 import { currentApplicant } from "@/lib/auth";
 import { programme } from "@/lib/content";
 import { emailConfigured } from "@/lib/email";
@@ -22,6 +23,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         <AuthSide eyebrow={programme.name} title="Applicant portal" />
         <div className="authx-main">
           <SignInForm next={next} emailReset={emailConfigured()} />
+          <AuthAside signIn />
         </div>
       </main>
     </>

@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/Chrome";
 import { BackgroundVideo } from "@/components/Motion";
+import { ChevronIcon } from "@/components/Icons";
 import { allowances, countryList, eligibility, faqs, phaseLabels, pillars, programme, timeline } from "@/lib/content";
+
+const howTo = [
+  { title: "Check your eligibility", action: "Start", href: "/apply" },
+  { title: "Create your account", action: "Create account", href: "/apply" },
+  { title: "Complete the application", action: "Continue", href: "/portal/application" },
+  { title: "Submit and follow your decision", action: "Open portal", href: "/portal" },
+];
 
 export default function Home() {
   return (
@@ -125,18 +133,18 @@ export default function Home() {
               <h2>How to apply</h2>
             </div>
             <ol className="steps4">
-              <li>
-                <b>Check your eligibility</b>
-              </li>
-              <li>
-                <b>Create your account</b>
-              </li>
-              <li>
-                <b>Complete the application</b>
-              </li>
-              <li>
-                <b>Submit and follow your decision</b>
-              </li>
+              {howTo.map((s, i) => (
+                <li key={s.title}>
+                  <Link href={s.href} className="step">
+                    <span className="step-n">{i + 1}</span>
+                    <span className="step-t">{s.title}</span>
+                    <span className="step-go">
+                      {s.action}
+                      <ChevronIcon />
+                    </span>
+                  </Link>
+                </li>
+              ))}
             </ol>
           </div>
         </section>

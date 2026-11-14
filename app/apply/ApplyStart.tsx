@@ -203,7 +203,10 @@ export default function ApplyStart() {
         </div>
         <label className="check small">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          <span>I agree that New Jersey State University may use this information to assess my application and administer my award.</span>
+          <span>
+            I agree that New Jersey State University may use this information to assess my application and administer my award, as set out in the{" "}
+            <Link href="/privacy" target="_blank">Privacy Policy</Link>.
+          </span>
         </label>
         {errors.consent && <span className="error">{errors.consent}</span>}
         <button className="btn btn-primary btn-block" disabled={busy}>

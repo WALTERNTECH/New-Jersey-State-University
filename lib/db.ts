@@ -281,6 +281,20 @@ create table if not exists payment_details (
   updated_at timestamptz not null default now()
 );
 alter table payment_details enable row level security;
+
+-- Security events with the IP address and browser they came from (see the Privacy Policy); kept 12 months
+create table if not exists access_log (
+  id bigserial primary key,
+  applicant_id uuid references applicants(id) on delete cascade,
+  staff_id uuid references staff(id) on delete cascade,
+  event text not null,
+  ip text,
+  user_agent text,
+  created_at timestamptz not null default now()
+);
+create index if not exists access_log_applicant on access_log(applicant_id, created_at desc);
+create index if not exists access_log_created on access_log(created_at);
+alter table access_log enable row level security;
 alter table allowance_requests add column if not exists paid_to text;
 alter table letters enable row level security;
 alter table emails enable row level security;

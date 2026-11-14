@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/Chrome";
 import AuthSide from "@/components/AuthSide";
+import AuthAside from "@/components/AuthAside";
 import { emailConfigured } from "@/lib/email";
 import { programme } from "@/lib/content";
 import ForgotForm from "./ForgotForm";
@@ -18,6 +19,7 @@ export default function ForgotPage() {
         />
         <div className="authx-main">
           <ForgotForm enabled={emailConfigured()} contactEmail={programme.contactEmail} />
+          <AuthAside signIn />
         </div>
       </main>
     </>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/Chrome";
 import AuthSide from "@/components/AuthSide";
+import AuthAside from "@/components/AuthAside";
 import { currentApplicant } from "@/lib/auth";
 import { programme } from "@/lib/content";
 import ApplyStart from "./ApplyStart";
@@ -17,6 +18,7 @@ export default async function ApplyPage() {
         <AuthSide eyebrow={`${programme.name} · ${programme.cycle}`} title="Start your application" />
         <div className="authx-main">
           <ApplyStart />
+          <AuthAside current={1} />
         </div>
       </main>
     </>
